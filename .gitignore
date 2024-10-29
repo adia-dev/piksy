@@ -71,7 +71,6 @@ Temporary Items
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,macos,make
 web/
-imgui/
 .null-ls*.cpp
 .gitignore
 /app
