@@ -1,92 +1,65 @@
-#
-# Makefile to use with SDL+emscripten
-# See https://emscripten.org/docs/getting_started/downloads.html
-# for installation instructions.
-#
-# This Makefile assumes you have loaded emscripten's environment.
-# (On Windows, you may need to execute emsdk_env.bat or encmdprompt.bat ahead)
-#
-# Running `make -f Makefile.emscripten` will produce three files:
-#  - web/index.html
-#  - web/index.js
-#  - web/index.wasm
-#
-# All three are needed to run the demo.
+# Makefile for SDL + Emscripten
+# Produces files in web/ directory (index.html, index.js, index.wasm)
 
-CC = emcc
-CXX = em++
-WEB_DIR = web
-EXE = $(WEB_DIR)/index.html
-IMGUI_DIR = imgui
-SOURCES = main.cpp
-SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
-SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
-OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
-UNAME_S := $(shell uname -s)
-CPPFLAGS =
-LDFLAGS =
-EMS =
+CC := emcc
+CXX := em++
+WEB_DIR := web
+EXE := $(WEB_DIR)/index.html
+IMGUI_DIR := imgui
+SRC_DIR := src
 
-##---------------------------------------------------------------------
-## EMSCRIPTEN OPTIONS
-##---------------------------------------------------------------------
+# Find all .cpp files in src directory and add ImGui sources
+SOURCES := $(shell find $(SRC_DIR) -type f -name '*.cpp' -not -name '.null-ls*.cpp')
+IMGUI_SOURCES := $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp \
+                 $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp \
+                 $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+SOURCES += $(IMGUI_SOURCES)
 
-# ("EMS" options gets added to both CPPFLAGS and LDFLAGS, whereas some options are for linker only)
-EMS += -s USE_SDL=2
-EMS += -s DISABLE_EXCEPTION_CATCHING=1
-LDFLAGS += -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s ASSERTIONS=1
+# Create object file paths based on source files
+OBJS := $(patsubst %.cpp, %.o, $(SOURCES))
 
-# Uncomment next line to fix possible rendering bugs with Emscripten version older then 1.39.0 (https://github.com/ocornut/imgui/issues/2877)
-#EMS += -s BINARYEN_TRAP_MODE=clamp
-#EMS += -s SAFE_HEAP=1    ## Adds overhead
+# Emscripten Flags
+CPPFLAGS := -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -Wall -Wformat -Os
+LDFLAGS := -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=0 -s ASSERTIONS=1 --shell-file imgui/examples/libs/emscripten/shell_minimal.html
+EMS := -s USE_SDL=2 -s DISABLE_EXCEPTION_CATCHING=1
 
-# Emscripten allows preloading a file or folder to be accessible at runtime.
-# The Makefile for this example project suggests embedding the misc/fonts/ folder into our application, it will then be accessible as "/fonts"
-# See documentation for more details: https://emscripten.org/docs/porting/files/packaging_files.html
-# (Default value is 0. Set to 1 to enable file-system and include the misc/fonts/ folder as part of the build.)
+# Conditional File System Embedding
 USE_FILE_SYSTEM ?= 0
 ifeq ($(USE_FILE_SYSTEM), 0)
-LDFLAGS += -s NO_FILESYSTEM=1
-CPPFLAGS += -DIMGUI_DISABLE_FILE_FUNCTIONS
-endif
-ifeq ($(USE_FILE_SYSTEM), 1)
-LDFLAGS += --no-heap-copy --preload-file ../../misc/fonts@/fonts
+	LDFLAGS += -s NO_FILESYSTEM=1
+	CPPFLAGS += -DIMGUI_DISABLE_FILE_FUNCTIONS
+else
+	LDFLAGS += --no-heap-copy --preload-file ../../misc/fonts@/fonts
 endif
 
-##---------------------------------------------------------------------
-## FINAL BUILD FLAGS
-##---------------------------------------------------------------------
-
-CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-#CPPFLAGS += -g
-CPPFLAGS += -Wall -Wformat -Os $(EMS)
-LDFLAGS += --shell-file imgui/examples/libs/emscripten/shell_minimal.html
+# Final Build Flags
+CPPFLAGS += $(EMS)
 LDFLAGS += $(EMS)
 
 ##---------------------------------------------------------------------
-## BUILD RULES
+## Build Rules
 ##---------------------------------------------------------------------
 
-%.o:%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(IMGUI_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(IMGUI_DIR)/backends/%.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
-
+# Default target
 all: $(EXE)
 	@echo Build complete for $(EXE)
 
+# Create output directory
 $(WEB_DIR):
-	mkdir $@
+	mkdir -p $@
 
-serve: all
-	python3 -m http.server -d $(WEB_DIR)
-
-$(EXE): $(OBJS) $(WEB_DIR)
+# Link executable
+$(EXE): $(OBJS) | $(WEB_DIR)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
+# Compile .cpp to .o
+%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+# Serve the output directory
+serve: clean all
+	python3 -m http.server -d $(WEB_DIR)
+
+# Clean up build artifacts
 clean:
 	rm -rf $(OBJS) $(WEB_DIR)

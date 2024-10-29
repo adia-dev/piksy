@@ -1,94 +1,71 @@
-#
-# Cross Platform Makefile
-# Compatible with MSYS2/MINGW, Ubuntu 14.04.1 and Mac OS X
-#
-# You will need SDL2 (http://www.libsdl.org):
-# Linux:
-#   apt-get install libsdl2-dev
-# Mac OS X:
-#   brew install sdl2
-# MSYS2:
-#   pacman -S mingw-w64-i686-SDL2
-#
+# Cross-Platform Makefile for Piksy
+# Compatible with Linux, macOS, and Windows (MinGW)
+# Requires SDL2 and OpenGL
 
-#CXX = g++
-#CXX = clang++
-
-EXE = piksy
-IMGUI_DIR = imgui
-SOURCES = main.cpp
-SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
-SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
-OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
+EXE := piksy
+EXE_DIR := bin
+IMGUI_DIR := imgui
+SOURCES_DIR := src
 UNAME_S := $(shell uname -s)
-LINUX_GL_LIBS = -lGL
 
-CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -Wformat
-LIBS =
+# Find source files in src directory and add ImGui sources
+SOURCES := $(shell find $(SOURCES_DIR) -type f -name '*.cpp' -not -name '.null-ls*.cpp')
+IMGUI_SOURCES := $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp \
+                 $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp \
+                 $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+SOURCES += $(IMGUI_SOURCES)
 
-##---------------------------------------------------------------------
-## OPENGL ES
-##---------------------------------------------------------------------
+# Create object file paths based on source files
+OBJS := $(patsubst %.cpp, %.o, $(SOURCES))
 
-## This assumes a GL ES library available in the system, e.g. libGLESv2.so
-# CXXFLAGS += -DIMGUI_IMPL_OPENGL_ES2
-# LINUX_GL_LIBS = -lGLESv2
-## If you're on a Raspberry Pi and want to use the legacy drivers,
-## use the following instead:
-# LINUX_GL_LIBS = -L/opt/vc/lib -lbrcmGLESv2
+# Common Compiler Flags
+CXX := g++
+CXXFLAGS := -std=c++17 -g -Wall -Wformat -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(SOURCES_DIR)
+LIBS :=
 
-##---------------------------------------------------------------------
-## BUILD FLAGS PER PLATFORM
-##---------------------------------------------------------------------
-
-ifeq ($(UNAME_S), Linux) #LINUX
-	ECHO_MESSAGE = "Linux"
-	LIBS += $(LINUX_GL_LIBS) -ldl `sdl2-config --libs`
-
+# Platform-Specific Flags and Libraries
+ifeq ($(UNAME_S), Linux)
+	ECHO_MESSAGE := "Linux"
+	LIBS += -lGL -ldl `sdl2-config --libs`
 	CXXFLAGS += `sdl2-config --cflags`
-	CFLAGS = $(CXXFLAGS)
 endif
 
-ifeq ($(UNAME_S), Darwin) #APPLE
-	ECHO_MESSAGE = "Mac OS X"
+ifeq ($(UNAME_S), Darwin)
+	ECHO_MESSAGE := "Mac OS X"
 	LIBS += -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo `sdl2-config --libs`
-	LIBS += -L/usr/local/lib
-
-	CXXFLAGS += `sdl2-config --cflags`
-	CXXFLAGS += -I/usr/local/include
-	CFLAGS = $(CXXFLAGS)
+	CXXFLAGS += `sdl2-config --cflags` -I/usr/local/include
 endif
 
 ifeq ($(OS), Windows_NT)
-    ECHO_MESSAGE = "MinGW"
-    LIBS += -lgdi32 -lopengl32 -limm32 `pkg-config --static --libs sdl2`
-
-    CXXFLAGS += `pkg-config --cflags sdl2`
-    CFLAGS = $(CXXFLAGS)
+	ECHO_MESSAGE := "Windows (MinGW)"
+	LIBS += -lgdi32 -lopengl32 -limm32 `pkg-config --static --libs sdl2`
+	CXXFLAGS += `pkg-config --cflags sdl2`
 endif
 
 ##---------------------------------------------------------------------
-## BUILD RULES
+## Build Rules
 ##---------------------------------------------------------------------
 
-%.o:%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(IMGUI_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(IMGUI_DIR)/backends/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
+# Default target
 all: $(EXE)
-	@echo Build complete for $(ECHO_MESSAGE)
+	@echo "Build complete for $(ECHO_MESSAGE)"
 
+# Link executable
 $(EXE): $(OBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
+	mkdir -p $(EXE_DIR)
+	$(CXX) -o $(EXE_DIR)/$@ $^ $(CXXFLAGS) $(LIBS)
 
+# Compile .cpp to .o
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+run: $(EXE)
+	$(EXE_DIR)/$(EXE)
+
+# Clean up build artifacts
+clean:
+	rm -rf $(EXE_DIR) $(OBJS)
+
+# Generate compile_commands.json for clang-tidy or other tools
 bear:
 	bear -- make
-
-clean:
-	rm -f $(EXE) $(OBJS)
