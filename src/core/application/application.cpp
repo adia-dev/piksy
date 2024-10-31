@@ -69,6 +69,7 @@ void Application::init() {
 
   _io = &ImGui::GetIO();
   (void)*_io;
+  _io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   ImGui::StyleColorsDark();
 
