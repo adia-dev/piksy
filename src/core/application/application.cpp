@@ -1,9 +1,14 @@
 #include "application.hpp"
+#include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
+#include "resource_manager/resource_manager.hpp"
+#include <iostream>
 #include <stdexcept>
 
 namespace piksy {
+
+Application::~Application() { cleanup(); }
 
 void Application::run() {
   auto &app = get();
@@ -44,8 +49,9 @@ void Application::init() {
   SDL_WindowFlags window_flags =
       (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
-  _window = SDL_CreateWindow("Piksy", SDL_WINDOWPOS_CENTERED,
-                             SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+  _window =
+      SDL_CreateWindow("Piksy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                       _window_width, _window_height, window_flags);
   if (_window == nullptr) {
     printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
     throw std::runtime_error("Error: SDL_CreateWindow()");
@@ -68,9 +74,26 @@ void Application::init() {
 
   ImGui_ImplSDL2_InitForSDLRenderer(_window, _renderer);
   ImGui_ImplSDLRenderer2_Init(_renderer);
+
+  init_textures();
+  init_sprites();
+}
+
+void Application::init_textures() {
+  ResourceManager::load_texture(_renderer, std::string(RESOURCE_DIR) +
+                                               "/textures/janemba.png");
+}
+
+void Application::init_sprites() {
+  _sprites.emplace_back(ResourceManager::get_texture(
+      _renderer, std::string(RESOURCE_DIR) + "/textures/janemba.png"));
 }
 
 void Application::cleanup() {
+  if (_cleaned_up) {
+    return;
+  }
+
   ImGui_ImplSDLRenderer2_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
@@ -82,6 +105,9 @@ void Application::cleanup() {
   _renderer = nullptr;
   _window = nullptr;
   _io = nullptr;
+  _cleaned_up = true;
+
+  std::cout << "Application successfully cleaned up\n";
 }
 
 void Application::handle_events() {
@@ -93,7 +119,7 @@ void Application::handle_events() {
     if (event.type == SDL_WINDOWEVENT &&
         event.window.event == SDL_WINDOWEVENT_CLOSE &&
         event.window.windowID == SDL_GetWindowID(_window)) {
-      _is_running = true;
+      _is_running = false;
     }
 
     if (event.type == SDL_KEYUP) {
@@ -118,36 +144,34 @@ void Application::render() {
     ImGui::ShowDemoWindow(&_show_demo_window);
 
   {
-    static float f = 0.0f;
-    static int counter = 0;
+    ImGui::Begin("Sprite Inspector");
 
-    ImGui::Begin("Hello, world!");
+    for (size_t i = 0; i < _sprites.size(); ++i) {
+      ImGui::PushID(static_cast<int>(i));
 
-    ImGui::Text("This is some useful text.");
+      if (ImGui::CollapsingHeader(("Sprite " + std::to_string(i)).c_str())) {
+        Sprite &sprite = _sprites[i];
+        ImVec2 position(sprite.x(), sprite.y());
+        ImVec2 size(sprite.width(), sprite.height());
+        ImVec4 frameRect(static_cast<float>(sprite.frame_rect().x),
+                         static_cast<float>(sprite.frame_rect().y),
+                         static_cast<float>(sprite.frame_rect().w),
+                         static_cast<float>(sprite.frame_rect().h));
 
-    ImGui::Checkbox("Demo Window", &_show_demo_window);
-    ImGui::Checkbox("Another Window", &_show_another_window);
+        ImGui::DragFloat2("Position", (float *)&position);
+        ImGui::DragFloat2("Size", (float *)&size);
+        ImGui::DragFloat4("Frame Rect", (float *)&frameRect);
 
-    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-    ImGui::ColorEdit3("clear color", (float *)&_clear_color);
+        sprite.set_position(position.x, position.y);
+        sprite.set_size(size.x, size.y);
+        sprite.set_frame_rect(
+            {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y),
+             static_cast<int>(frameRect.z), static_cast<int>(frameRect.w)});
+      }
 
-    if (ImGui::Button("Button"))
-      counter++;
+      ImGui::PopID();
+    }
 
-    ImGui::SameLine();
-    ImGui::Text("counter = %d", counter);
-
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / _io->Framerate, _io->Framerate);
-    ImGui::End();
-  }
-
-  if (_show_another_window) {
-    ImGui::Begin("Another Window", &_show_another_window);
-
-    ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me"))
-      _show_another_window = false;
     ImGui::End();
   }
 
@@ -158,8 +182,12 @@ void Application::render() {
       _renderer, (Uint8)(_clear_color.x * 255), (Uint8)(_clear_color.y * 255),
       (Uint8)(_clear_color.z * 255), (Uint8)(_clear_color.w * 255));
   SDL_RenderClear(_renderer);
+
+  for (const Sprite &sprite : _sprites) {
+    sprite.render(_renderer);
+  }
+
   ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer);
   SDL_RenderPresent(_renderer);
 }
-
 } // namespace piksy

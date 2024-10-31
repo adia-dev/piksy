@@ -28,20 +28,20 @@ LIBS := $(shell pkg-config --libs opencv4)
 # Platform-Specific Flags and Libraries
 ifeq ($(UNAME_S), Linux)
 	ECHO_MESSAGE := "Linux"
-	LIBS += -lGL -ldl `sdl2-config --libs`
-	CXXFLAGS += `sdl2-config --cflags`
+	LIBS += -lGL -ldl `pkg-config --libs sdl2 sdl2_image sdl2_ttf`
+	CXXFLAGS += `pkg-config --cflags sdl2 sdl2_ttf sdl2_image`
 endif
 
 ifeq ($(UNAME_S), Darwin)
 	ECHO_MESSAGE := "Mac OS X"
-	LIBS += -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo `sdl2-config --libs`
-	CXXFLAGS += `sdl2-config --cflags` -I/usr/local/include
+	LIBS += -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo `pkg-config --libs sdl2 sdl2_ttf sdl2_image`
+	CXXFLAGS += `pkg-config --cflags sdl2 sdl2_ttf sdl2_image` -I/usr/local/include
 endif
 
 ifeq ($(OS), Windows_NT)
 	ECHO_MESSAGE := "Windows (MinGW)"
-	LIBS += -lgdi32 -lopengl32 -limm32 `pkg-config --static --libs sdl2`
-	CXXFLAGS += `pkg-config --cflags sdl2`
+	LIBS += -lgdi32 -lopengl32 -limm32 `pkg-config --static --libs sdl2 sdl2_image sdl2_ttf`
+	CXXFLAGS += `pkg-config --cflags sdl2 sdl2_image sdl2_ttf`
 endif
 
 ##---------------------------------------------------------------------
