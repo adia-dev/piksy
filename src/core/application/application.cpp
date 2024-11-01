@@ -1,10 +1,10 @@
 #include "application.hpp"
-#include "components/assets.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "resource_manager/resource_manager.hpp"
 #include <components/inspector.hpp>
+#include <components/project/project.hpp>
 #include <iostream>
 #include <state/state.hpp>
 #include <stdexcept>
@@ -185,7 +185,9 @@ void Application::render() {
   _viewport->render(_renderer.get());
 
   Inspector::render();
-  Assets::render();
+
+  _projectComponent.render();
+
   ImGui::ShowDemoWindow(&_show_demo_window);
 
   ImGui::Render();

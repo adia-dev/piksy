@@ -1,5 +1,6 @@
 #pragma once
 
+#include "components/project/project.hpp"
 #include "imgui.h"
 #include <SDL.h>
 #include <components/viewport.hpp>
@@ -44,6 +45,9 @@ private:
   ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   std::unique_ptr<Viewport> _viewport{nullptr};
+
+  // Components
+  Project _projectComponent;
 
   void init();
   void init_textures();
