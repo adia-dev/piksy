@@ -4,6 +4,7 @@
 #include <core/state.hpp>
 
 namespace piksy {
+namespace components {
 
 Viewport::Viewport(SDL_Renderer *renderer) : _render_texture(nullptr), _viewport_size(800, 600) {
     create_render_texture(renderer, static_cast<int>(_viewport_size.x),
@@ -54,7 +55,7 @@ void Viewport::render(SDL_Renderer *renderer) {
     SDL_RenderClear(renderer);
 
     // Render sprites to the render texture
-    for (const Sprite &sprite : State::sprites()) {
+    for (const rendering::Sprite &sprite : core::State::sprites()) {
         sprite.render(renderer);
     }
 
@@ -116,7 +117,7 @@ void Viewport::render_selection_rect(SDL_Renderer *renderer) {
 }
 
 void Viewport::handle_viewport_click(float x, float y) {
-    for (Sprite &sprite : State::sprites()) {
+    for (rendering::Sprite &sprite : core::State::sprites()) {
         SDL_Rect rect = sprite.rect();
         if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
             sprite.set_selected(true);
@@ -126,4 +127,5 @@ void Viewport::handle_viewport_click(float x, float y) {
     }
 }
 
+}  // namespace components
 }  // namespace piksy

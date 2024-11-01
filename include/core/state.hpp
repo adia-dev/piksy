@@ -2,13 +2,14 @@
 #include <vector>
 
 namespace piksy {
+namespace core {
 class State {
    public:
     static State &get();
 
-    static std::vector<Sprite> &sprites();
-    static void add_sprite(Sprite &&sprite);
-    static void add_sprite(const Sprite &sprite);
+    static std::vector<rendering::Sprite> &sprites();
+    static void add_sprite(rendering::Sprite &&sprite);
+    static void add_sprite(const rendering::Sprite &sprite);
 
    private:
     State() = default;
@@ -19,6 +20,7 @@ class State {
     State &operator=(const State &) = delete;
     State &operator=(State &&) = delete;
 
-    std::vector<Sprite> _sprites;
+    std::vector<rendering::Sprite> _sprites;
 };
+}  // namespace core
 }  // namespace piksy

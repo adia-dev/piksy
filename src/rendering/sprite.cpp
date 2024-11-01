@@ -3,6 +3,7 @@
 
 namespace piksy {
 
+namespace rendering {
 Sprite::Sprite(std::shared_ptr<Texture2D> texture, const SDL_Rect &rect, const SDL_Rect &frame_rect)
     : _texture(texture), _rect(rect), _frame_rect(frame_rect) {
     if (_frame_rect.w == 0) {
@@ -67,4 +68,5 @@ void Sprite::render(SDL_Renderer *renderer) const {
 void Sprite::set_selected(bool selected) { _selected = selected; }
 
 bool Sprite::is_selected() const { return _selected; }
+}  // namespace rendering
 }  // namespace piksy

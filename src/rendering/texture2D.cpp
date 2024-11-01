@@ -7,6 +7,7 @@
 namespace fs = std::filesystem;
 
 namespace piksy {
+namespace rendering {
 
 Texture2D::Texture2D(SDL_Renderer *renderer, const std::string &texture_path) {
     if (renderer == nullptr) {
@@ -29,4 +30,5 @@ Texture2D::Texture2D(SDL_Renderer *renderer, const std::string &texture_path) {
         throw std::runtime_error(std::string("SDL_QueryTexture Error: ") + SDL_GetError());
     }
 }
+}  // namespace rendering
 }  // namespace piksy

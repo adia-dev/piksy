@@ -3,7 +3,7 @@
 
 int main() {
     try {
-        piksy::Application::run();
+        piksy::core::Application::run();
     } catch (const std::runtime_error &ex) {
         std::cerr << "Application exited with a runtime exception:\nException: " << ex.what()
                   << std::endl;

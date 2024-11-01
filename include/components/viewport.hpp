@@ -5,6 +5,7 @@
 #include "imgui.h"
 
 namespace piksy {
+namespace components {
 class Viewport {
    public:
     explicit Viewport(SDL_Renderer *renderer);
@@ -23,4 +24,5 @@ class Viewport {
     SDL_Rect _selection_rect;
     bool _is_dragging = false;
 };
+}  // namespace components
 }  // namespace piksy

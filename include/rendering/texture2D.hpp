@@ -6,6 +6,7 @@
 #include <string>
 
 namespace piksy {
+namespace rendering {
 struct Texture2D {
    public:
     Texture2D(SDL_Renderer *renderer, const std::string &texture_path);
@@ -16,4 +17,5 @@ struct Texture2D {
     std::shared_ptr<SDL_Texture> texture{nullptr, SDL_DestroyTexture};
     int width, height;
 };
+}  // namespace rendering
 }  // namespace piksy

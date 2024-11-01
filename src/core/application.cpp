@@ -9,6 +9,7 @@
 #include <managers/resource_manager.hpp>
 
 namespace piksy {
+namespace core {
 
 Application &Application::get() {
     static Application instance;
@@ -86,16 +87,16 @@ void Application::init() {
     init_textures();
     init_sprites();
 
-    _viewport = std::make_unique<Viewport>(_renderer.get());
+    _viewport = std::make_unique<components::Viewport>(_renderer.get());
 }
 
 void Application::init_textures() {
-    ResourceManager::load_texture(_renderer.get(),
-                                  std::string(RESOURCE_DIR) + "/textures/janemba.png");
+    managers::ResourceManager::load_texture(_renderer.get(),
+                                            std::string(RESOURCE_DIR) + "/textures/janemba.png");
 }
 
 void Application::init_sprites() {
-    State::add_sprite(Sprite(ResourceManager::get_texture(
+    State::add_sprite(rendering::Sprite(managers::ResourceManager::get_texture(
         _renderer.get(), std::string(RESOURCE_DIR) + "/textures/janemba.png")));
 }
 
@@ -199,4 +200,5 @@ void Application::render() {
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer.get());
     SDL_RenderPresent(_renderer.get());
 }
+}  // namespace core
 }  // namespace piksy

@@ -5,6 +5,7 @@
 #include <rendering/texture2D.hpp>
 
 namespace piksy {
+namespace rendering {
 class Sprite {
    public:
     explicit Sprite(std::shared_ptr<Texture2D> texture, const SDL_Rect &rect = {},
@@ -34,4 +35,5 @@ class Sprite {
     SDL_Rect _rect, _frame_rect;
     bool _selected = false;
 };
+}  // namespace rendering
 }  // namespace piksy

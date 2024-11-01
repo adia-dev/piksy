@@ -5,6 +5,7 @@
 namespace fs = std::filesystem;
 
 namespace piksy {
+namespace managers {
 
 ResourceManager &ResourceManager::get() {
     static ResourceManager instance;
@@ -15,8 +16,8 @@ void ResourceManager::load_texture(SDL_Renderer *renderer, const std::string &te
     get_texture(renderer, texture_path);
 }
 
-std::shared_ptr<Texture2D> ResourceManager::get_texture(SDL_Renderer *renderer,
-                                                        const std::string &texture_path) {
+std::shared_ptr<rendering::Texture2D> ResourceManager::get_texture(
+    SDL_Renderer *renderer, const std::string &texture_path) {
     ResourceManager &resource_manager = get();
 
     auto texture_found = resource_manager._textures.find(texture_path);
@@ -29,8 +30,8 @@ std::shared_ptr<Texture2D> ResourceManager::get_texture(SDL_Renderer *renderer,
                                  texture_path);
     }
 
-    resource_manager._textures.emplace(texture_path,
-                                       std::make_shared<Texture2D>(renderer, texture_path));
+    resource_manager._textures.emplace(
+        texture_path, std::make_shared<rendering::Texture2D>(renderer, texture_path));
     return resource_manager._textures.at(texture_path);
 }
 
@@ -46,4 +47,5 @@ bool ResourceManager::unload_texture(const std::string &texture_path) {
     return true;
 }
 
+}  // namespace managers
 }  // namespace piksy

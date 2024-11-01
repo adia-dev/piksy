@@ -12,6 +12,7 @@
 #endif
 
 namespace piksy {
+namespace core {
 class Application {
    public:
     static Application &get();
@@ -41,10 +42,10 @@ class Application {
     bool _cleaned_up = false;
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    std::unique_ptr<Viewport> _viewport{nullptr};
+    std::unique_ptr<components::Viewport> _viewport{nullptr};
 
     // Components
-    Project _projectComponent;
+    components::Project _projectComponent;
 
     void init();
     void init_textures();
@@ -55,4 +56,5 @@ class Application {
     void update();
     void render();
 };
+}  // namespace core
 }  // namespace piksy
