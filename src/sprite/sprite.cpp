@@ -1,4 +1,5 @@
 #include "sprite.hpp"
+#include "sprite/sprite.hpp"
 #include <stdexcept>
 
 namespace piksy {
@@ -61,5 +62,14 @@ void Sprite::render(SDL_Renderer *renderer) const {
   }
 
   SDL_RenderCopy(renderer, _texture->get(), &_frame_rect, &_rect);
+
+  if (_selected) {
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderDrawRect(renderer, &_rect);
+  }
 }
+
+void Sprite::set_selected(bool selected) { _selected = selected; }
+
+bool Sprite::is_selected() const { return _selected; }
 } // namespace piksy

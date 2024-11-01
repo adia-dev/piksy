@@ -12,6 +12,9 @@ public:
   void set_position(int x, int y);
   void set_frame_rect(const SDL_Rect &frame_rect);
 
+  void set_selected(bool selected);
+  bool is_selected() const;
+
   int x() const;
   int y() const;
   int width() const;
@@ -27,5 +30,6 @@ public:
 private:
   std::shared_ptr<Texture2D> _texture;
   SDL_Rect _rect, _frame_rect;
+  bool _selected = false;
 };
 } // namespace piksy

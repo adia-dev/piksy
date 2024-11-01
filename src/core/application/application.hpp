@@ -1,11 +1,9 @@
 #pragma once
 
 #include "imgui.h"
-#include "sprite/sprite.hpp"
 #include <SDL.h>
 #include <components/viewport.hpp>
 #include <memory>
-#include <vector>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
@@ -31,13 +29,13 @@ private:
   Application(Application &&) = delete;
   Application(const Application &) = delete;
 
-  SDL_Window *_window = nullptr;
-  SDL_Renderer *_renderer = nullptr;
+  std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> _window{
+      nullptr, SDL_DestroyWindow};
+  std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> _renderer{
+      nullptr, SDL_DestroyRenderer};
   ImGuiIO *_io = nullptr;
 
-  std::vector<Sprite> _sprites;
-
-  int _window_width = 1920;
+  int _window_width = 1080;
   int _window_height = 720;
 
   bool _show_demo_window = true;

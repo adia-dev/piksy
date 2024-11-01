@@ -1,20 +1,19 @@
 #pragma once
 
 #include "imgui.h"
-#include "sprite/sprite.hpp"
 #include <SDL.h>
-#include <vector>
 
 namespace piksy {
 class Viewport {
 public:
-  Viewport(SDL_Renderer *renderer);
+  explicit Viewport(SDL_Renderer *renderer);
   ~Viewport();
 
-  void render(SDL_Renderer *renderer, const std::vector<Sprite> &sprites);
+  void render(SDL_Renderer *renderer);
 
 private:
   void create_render_texture(SDL_Renderer *renderer, int width, int height);
+  void handle_viewport_click(float x, float y);
 
   SDL_Texture *_render_texture;
   ImVec2 _viewport_size;
