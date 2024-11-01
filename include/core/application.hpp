@@ -48,13 +48,18 @@ class Application {
     components::Project _projectComponent;
 
     void init();
+    void init_sdl2();
+    void init_imgui();
     void init_textures();
     void init_sprites();
+    void init_components();
     void cleanup();
 
     void handle_events();
     void update();
     void render();
+
+    void set_fancy_imgui_style();
 };
 }  // namespace core
 }  // namespace piksy
