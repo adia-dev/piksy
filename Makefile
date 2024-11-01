@@ -6,15 +6,20 @@ EXE := piksy
 EXE_DIR := bin
 IMGUI_DIR := imgui
 SOURCES_DIR := src
+INCLUDE_DIR := include
 UNAME_S := $(shell uname -s)
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 RESOURCE_DIR := $(ROOT_DIR)resources
 
 # Find source files in src directory and add ImGui sources
 SOURCES := $(shell find $(SOURCES_DIR) -type f -name '*.cpp' -not -name '.null-ls*.cpp')
-IMGUI_SOURCES := $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp \
-                 $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp \
-                 $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_sdlrenderer2.cpp
+IMGUI_SOURCES := $(IMGUI_DIR)/imgui.cpp \
+                 $(IMGUI_DIR)/imgui_demo.cpp \
+                 $(IMGUI_DIR)/imgui_draw.cpp \
+                 $(IMGUI_DIR)/imgui_tables.cpp \
+                 $(IMGUI_DIR)/imgui_widgets.cpp \
+                 $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp \
+                 $(IMGUI_DIR)/backends/imgui_impl_sdlrenderer2.cpp
 SOURCES += $(IMGUI_SOURCES)
 
 # Create object file paths based on source files
@@ -22,7 +27,13 @@ OBJS := $(patsubst %.cpp, %.o, $(SOURCES))
 
 # Common Compiler Flags
 CXX := g++
-CXXFLAGS := -std=c++17 -g -Wall -Wformat -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(SOURCES_DIR) $(shell pkg-config --cflags opencv4) -DRESOURCE_DIR=\"$(RESOURCE_DIR)\"
+CXXFLAGS := -std=c++17 -g -Wall -Wformat \
+             -I$(INCLUDE_DIR) \
+             -I$(IMGUI_DIR) \
+             -I$(IMGUI_DIR)/backends \
+             -I$(SOURCES_DIR) \
+             $(shell pkg-config --cflags opencv4) \
+             -DRESOURCE_DIR=\"$(RESOURCE_DIR)\"
 LIBS := $(shell pkg-config --libs opencv4)
 
 # Platform-Specific Flags and Libraries
@@ -67,6 +78,10 @@ run: $(EXE)
 # Clean up build artifacts
 clean:
 	rm -rf $(EXE_DIR) $(OBJS)
+	
+# Format the code with clang-format
+format:
+	clang-format -i src/**/*.cpp include/**/*.hpp
 
 # Generate compile_commands.json for clang-tidy or other tools
 bear:
