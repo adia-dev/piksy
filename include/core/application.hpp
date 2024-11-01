@@ -34,8 +34,8 @@ class Application {
                                                                             SDL_DestroyRenderer};
     ImGuiIO *_io = nullptr;
 
-    int _window_width = 1080;
-    int _window_height = 720;
+    int _window_width = 1440;
+    int _window_height = 900;
 
     bool _show_demo_window = true;
     bool _is_running = true;
