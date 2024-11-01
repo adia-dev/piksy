@@ -1,4 +1,5 @@
 #include "viewport.hpp"
+#include "SDL_render.h"
 #include <state/state.hpp>
 #include <stdexcept>
 
@@ -62,6 +63,10 @@ void Viewport::render(SDL_Renderer *renderer) {
     sprite.render(renderer);
   }
 
+  if (_is_dragging) {
+    render_selection_rect(renderer);
+  }
+
   // Reset the render target to the default (window)
   SDL_SetRenderTarget(renderer, nullptr);
 
@@ -69,7 +74,7 @@ void Viewport::render(SDL_Renderer *renderer) {
   ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
   // Detect clicks on the viewport
-  if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+  if (ImGui::IsItemHovered()) {
     ImVec2 mousePos = ImGui::GetMousePos();
     ImVec2 imagePos = ImGui::GetItemRectMin();
     ImVec2 relativePos =
@@ -79,22 +84,51 @@ void Viewport::render(SDL_Renderer *renderer) {
     float viewportX = relativePos.x;
     float viewportY = relativePos.y;
 
-    // Handle the click event (e.g., select a sprite)
-    handle_viewport_click(viewportX, viewportY);
+    _mouse_position = {viewportX, viewportY};
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      _start_dragging_position = _mouse_position;
+      _is_dragging = true;
+      handle_viewport_click(viewportX, viewportY);
+    }
+
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+      _is_dragging = false;
+    }
+  } else {
+    _is_dragging = false;
   }
 
   ImGui::End();
 }
 
+void Viewport::render_selection_rect(SDL_Renderer *renderer) {
+  _selection_rect = {
+      static_cast<int>(_start_dragging_position.x),
+      static_cast<int>(_start_dragging_position.y),
+      std::abs(
+          static_cast<int>(_mouse_position.x - _start_dragging_position.x)),
+      std::abs(
+          static_cast<int>(_mouse_position.y - _start_dragging_position.y)),
+  };
+
+  if (_start_dragging_position.x > _mouse_position.x) {
+    _selection_rect.x = _mouse_position.x;
+  }
+  if (_start_dragging_position.y > _mouse_position.y) {
+    _selection_rect.y = _mouse_position.y;
+  }
+
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+  SDL_RenderDrawRect(renderer, &_selection_rect);
+}
+
 void Viewport::handle_viewport_click(float x, float y) {
-  // Iterate over sprites to check if the click is within any sprite
   for (Sprite &sprite : State::sprites()) {
     SDL_Rect rect = sprite.rect();
     if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y &&
         y <= rect.y + rect.h) {
-      // Sprite was clicked
       sprite.set_selected(true);
-      // Perform additional actions as needed
     } else {
       sprite.set_selected(false);
     }
