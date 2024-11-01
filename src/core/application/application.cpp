@@ -1,8 +1,10 @@
 #include "application.hpp"
+#include "components/assets.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "resource_manager/resource_manager.hpp"
+#include <components/inspector.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -70,6 +72,7 @@ void Application::init() {
   _io = &ImGui::GetIO();
   (void)*_io;
   _io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  _io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   ImGui::StyleColorsDark();
 
@@ -78,6 +81,8 @@ void Application::init() {
 
   init_textures();
   init_sprites();
+
+  _viewport = std::make_unique<Viewport>(_renderer);
 }
 
 void Application::init_textures() {
@@ -141,40 +146,42 @@ void Application::render() {
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
 
-  if (_show_demo_window)
-    ImGui::ShowDemoWindow(&_show_demo_window);
-
+  // DockSpace
   {
-    ImGui::Begin("Sprite Inspector");
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    ImGuiWindowFlags window_flags =
+        ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 
-    for (size_t i = 0; i < _sprites.size(); ++i) {
-      ImGui::PushID(static_cast<int>(i));
+    ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
 
-      if (ImGui::CollapsingHeader(("Sprite " + std::to_string(i)).c_str())) {
-        Sprite &sprite = _sprites[i];
-        ImVec2 position(sprite.x(), sprite.y());
-        ImVec2 size(sprite.width(), sprite.height());
-        ImVec4 frameRect(static_cast<float>(sprite.frame_rect().x),
-                         static_cast<float>(sprite.frame_rect().y),
-                         static_cast<float>(sprite.frame_rect().w),
-                         static_cast<float>(sprite.frame_rect().h));
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                    ImGuiWindowFlags_NoBringToFrontOnFocus |
+                    ImGuiWindowFlags_NoNavFocus;
 
-        ImGui::DragFloat2("Position", (float *)&position);
-        ImGui::DragFloat2("Size", (float *)&size);
-        ImGui::DragFloat4("Frame Rect", (float *)&frameRect);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-        sprite.set_position(position.x, position.y);
-        sprite.set_size(size.x, size.y);
-        sprite.set_frame_rect(
-            {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y),
-             static_cast<int>(frameRect.z), static_cast<int>(frameRect.w)});
-      }
+    ImGui::Begin("MainDockSpace", nullptr, window_flags);
+    ImGui::PopStyleVar(2);
 
-      ImGui::PopID();
+    // DockSpace
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+      ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+      ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
     ImGui::End();
   }
+
+  _viewport->render(_renderer, _sprites);
+
+  Inspector::render();
+  Assets::render();
 
   ImGui::Render();
   SDL_RenderSetScale(_renderer, _io->DisplayFramebufferScale.x,
@@ -183,11 +190,6 @@ void Application::render() {
       _renderer, (Uint8)(_clear_color.x * 255), (Uint8)(_clear_color.y * 255),
       (Uint8)(_clear_color.z * 255), (Uint8)(_clear_color.w * 255));
   SDL_RenderClear(_renderer);
-
-  for (const Sprite &sprite : _sprites) {
-    sprite.render(_renderer);
-  }
-
   ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer);
   SDL_RenderPresent(_renderer);
 }

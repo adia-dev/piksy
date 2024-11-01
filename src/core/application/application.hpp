@@ -2,9 +2,9 @@
 
 #include "imgui.h"
 #include "sprite/sprite.hpp"
-#include "texture/texture2D.hpp"
 #include <SDL.h>
-#include <unordered_map>
+#include <components/viewport.hpp>
+#include <memory>
 #include <vector>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
@@ -44,6 +44,8 @@ private:
   bool _is_running = true;
   bool _cleaned_up = false;
   ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+  std::unique_ptr<Viewport> _viewport{nullptr};
 
   void init();
   void init_textures();
