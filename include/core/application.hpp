@@ -9,6 +9,7 @@
 #include <core/config.hpp>
 #include <core/state.hpp>
 #include <memory>
+#include <rendering/window.hpp>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
@@ -16,6 +17,7 @@
 
 namespace piksy {
 namespace core {
+
 class Application {
    public:
     static Application &get();
@@ -40,7 +42,7 @@ class Application {
     Application(const Application &) = delete;
 
     // TODO: Wrap these into RAII classes
-    std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> _window{nullptr, SDL_DestroyWindow};
+    rendering::Window _window;
     std::shared_ptr<SDL_Renderer> _renderer{nullptr, SDL_DestroyRenderer};
 
     ImGuiIO *_io = nullptr;

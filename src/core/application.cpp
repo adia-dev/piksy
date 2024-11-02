@@ -69,13 +69,7 @@ void Application::init_sdl2() {
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 #endif
 
-    _window.reset(SDL_CreateWindow(_config.window_config.title.c_str(), SDL_WINDOWPOS_CENTERED,
-                                   SDL_WINDOWPOS_CENTERED, _config.window_config.width,
-                                   _config.window_config.height, _config.window_config.flags));
-    if (_window == nullptr) {
-        printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-        throw std::runtime_error("Error: SDL_CreateWindow()");
-    }
+    _window.init(_config.window_config);
 
     _renderer.reset(SDL_CreateRenderer(_window.get(), -1, _config.window_config.renderer_flags),
                     SDL_DestroyRenderer);
@@ -143,8 +137,6 @@ void Application::cleanup() {
     SDL_DestroyWindow(_window.get());
     SDL_Quit();
 
-    _renderer = nullptr;
-    _window = nullptr;
     _io = nullptr;
 
     std::cout << "Application successfully cleaned up\n";
