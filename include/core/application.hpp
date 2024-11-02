@@ -30,8 +30,7 @@ class Application {
     Application(const Application &) = delete;
 
     std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> _window{nullptr, SDL_DestroyWindow};
-    std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> _renderer{nullptr,
-                                                                            SDL_DestroyRenderer};
+    std::shared_ptr<SDL_Renderer> _renderer{nullptr, SDL_DestroyRenderer};
     ImGuiIO *_io = nullptr;
 
     int _window_width = 1440;

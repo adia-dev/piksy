@@ -71,8 +71,9 @@ void Application::init_sdl2() {
         throw std::runtime_error("Error: SDL_CreateWindow()");
     }
 
-    _renderer.reset(SDL_CreateRenderer(_window.get(), -1,
-                                       SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED));
+    _renderer.reset(
+        SDL_CreateRenderer(_window.get(), -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED),
+        SDL_DestroyRenderer);
 
     if (_renderer == nullptr) {
         SDL_Log("Error creating SDL_Renderer!");
@@ -206,7 +207,7 @@ void Application::init_sprites() {
 }
 
 void Application::init_components() {
-    _viewport = std::make_unique<components::Viewport>(_renderer.get());
+    _viewport = std::make_unique<components::Viewport>(_renderer);
 }
 
 void Application::cleanup() {
