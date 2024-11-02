@@ -4,22 +4,24 @@
 namespace piksy {
 
 namespace rendering {
+Sprite::Sprite() : _texture(nullptr), _rect({}), _frame_rect({}), _selected(false) {}
+
 Sprite::Sprite(std::shared_ptr<Texture2D> texture, const SDL_Rect &rect, const SDL_Rect &frame_rect)
     : _texture(texture), _rect(rect), _frame_rect(frame_rect) {
     if (_frame_rect.w == 0) {
-        _frame_rect.w = texture->width;
+        _frame_rect.w = texture->width();
     }
 
     if (_rect.w == 0) {
-        _rect.w = texture->width;
+        _rect.w = texture->width();
     }
 
     if (_frame_rect.h == 0) {
-        _frame_rect.h = texture->height;
+        _frame_rect.h = texture->height();
     }
 
     if (_rect.h == 0) {
-        _rect.h = texture->height;
+        _rect.h = texture->height();
     }
 }
 
@@ -32,6 +34,14 @@ void Sprite::set_position(int x, int y) {
     _rect.x = x;
     _rect.y = y;
 }
+
+void Sprite::set_selected(bool selected) { _selected = selected; }
+
+bool Sprite::is_selected() const { return _selected; }
+
+void Sprite::set_texture(std::shared_ptr<Texture2D> texture) { _texture = texture; }
+
+std::shared_ptr<Texture2D> Sprite::texture() const { return _texture; }
 
 void Sprite::set_frame_rect(const SDL_Rect &frame_rect) { _frame_rect = frame_rect; }
 
@@ -56,6 +66,9 @@ void Sprite::render(SDL_Renderer *renderer) const {
     if (renderer == nullptr) {
         throw std::runtime_error("Cannot render a sprite if the renderer is null.");
     }
+    if (_texture == nullptr) {
+        throw std::runtime_error("Cannot render a sprite if the texture is null.");
+    }
 
     SDL_RenderCopy(renderer, _texture->get(), &_frame_rect, &_rect);
 
@@ -64,9 +77,5 @@ void Sprite::render(SDL_Renderer *renderer) const {
         SDL_RenderDrawRect(renderer, &_rect);
     }
 }
-
-void Sprite::set_selected(bool selected) { _selected = selected; }
-
-bool Sprite::is_selected() const { return _selected; }
 }  // namespace rendering
 }  // namespace piksy

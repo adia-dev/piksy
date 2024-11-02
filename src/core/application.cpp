@@ -8,6 +8,9 @@
 #include <iostream>
 #include <managers/resource_manager.hpp>
 
+#include "SDL_ttf.h"
+#include "managers/state_manager.hpp"
+
 namespace piksy {
 namespace core {
 
@@ -43,11 +46,17 @@ void Application::shutdown() {
     app.cleanup();
 }
 
+std::shared_ptr<SDL_Renderer> Application::renderer() {
+    const auto &app = get();
+    return app._renderer;
+}
+
 void Application::init() {
     init_sdl2();
     init_imgui();
     init_textures();
-    init_sprites();
+    init_fonts();
+    init_state();
     init_components();
 }
 
@@ -55,6 +64,11 @@ void Application::init_sdl2() {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
         throw std::runtime_error("Error: SDL_Init()");
+    }
+
+    if (TTF_Init() < 0) {
+        std::cerr << "Error initializing SDL_ttf: " << TTF_GetError() << std::endl;
+        throw std::runtime_error("Error: TTF_init()");
     }
 
 #ifdef SDL_HINT_IME_SHOW_UI
@@ -201,10 +215,12 @@ void Application::init_textures() {
                                             std::string(RESOURCE_DIR) + "/textures/janemba.png");
 }
 
-void Application::init_sprites() {
-    State::add_sprite(rendering::Sprite(managers::ResourceManager::get_texture(
-        _renderer.get(), std::string(RESOURCE_DIR) + "/textures/janemba.png")));
+void Application::init_fonts() {
+    managers::ResourceManager::load_font(
+        _renderer.get(), std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
 }
+
+void Application::init_state() { managers::StateManager::init(); }
 
 void Application::init_components() {
     _viewport = std::make_unique<components::Viewport>(_renderer);
@@ -215,9 +231,14 @@ void Application::cleanup() {
         return;
     }
 
+    managers::ResourceManager::cleanup();
+    managers::StateManager::cleanup();
+
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+
+    TTF_Quit();
 
     SDL_DestroyRenderer(_renderer.get());
     SDL_DestroyWindow(_window.get());

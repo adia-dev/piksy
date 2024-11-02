@@ -2,12 +2,14 @@
 
 #include <SDL_rect.h>
 
+#include <memory>
 #include <rendering/texture2D.hpp>
 
 namespace piksy {
 namespace rendering {
 class Sprite {
    public:
+    Sprite();
     explicit Sprite(std::shared_ptr<Texture2D> texture, const SDL_Rect &rect = {},
                     const SDL_Rect &frame_rect = {});
 
@@ -17,6 +19,9 @@ class Sprite {
 
     void set_selected(bool selected);
     bool is_selected() const;
+
+    void set_texture(std::shared_ptr<Texture2D> texture);
+    std::shared_ptr<Texture2D> texture() const;
 
     int x() const;
     int y() const;

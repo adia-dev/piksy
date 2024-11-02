@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <imgui.h>
 
 #include <components/project.hpp>
@@ -20,6 +21,8 @@ class Application {
     static void run();
     static void shutdown();
 
+    static std::shared_ptr<SDL_Renderer> renderer();
+
    private:
     Application() = default;
     ~Application();
@@ -29,8 +32,10 @@ class Application {
     Application(Application &&) = delete;
     Application(const Application &) = delete;
 
+    // TODO: Wrap these into RAII classes
     std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> _window{nullptr, SDL_DestroyWindow};
     std::shared_ptr<SDL_Renderer> _renderer{nullptr, SDL_DestroyRenderer};
+
     ImGuiIO *_io = nullptr;
 
     int _window_width = 1440;
@@ -50,7 +55,8 @@ class Application {
     void init_sdl2();
     void init_imgui();
     void init_textures();
-    void init_sprites();
+    void init_fonts();
+    void init_state();
     void init_components();
     void cleanup();
 

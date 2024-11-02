@@ -4,6 +4,8 @@
 #include <components/viewport.hpp>
 #include <core/state.hpp>
 
+#include "managers/state_manager.hpp"
+
 namespace piksy {
 namespace components {
 
@@ -33,7 +35,7 @@ void Viewport::create_render_texture(int width, int height) {
     }
 }
 
-void Viewport::render(SDL_Renderer *renderer) {
+void Viewport::render(SDL_Renderer* renderer) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
@@ -52,9 +54,7 @@ void Viewport::render(SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    for (const rendering::Sprite &sprite : core::State::sprites()) {
-        sprite.render(renderer);
-    }
+    managers::StateManager::texture_sprite().render(renderer);
 
     if (_is_dragging) {
         render_selection_rect();
@@ -117,13 +117,12 @@ void Viewport::handle_viewport_click(float x, float y) {
                pixel_color.b, pixel_color.a);
     }
 
-    for (rendering::Sprite &sprite : core::State::sprites()) {
-        SDL_Rect rect = sprite.rect();
-        if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
-            sprite.set_selected(true);
-        } else {
-            sprite.set_selected(false);
-        }
+    auto& sprite = managers::StateManager::texture_sprite();
+    SDL_Rect rect = sprite.rect();
+    if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+        sprite.set_selected(true);
+    } else {
+        sprite.set_selected(false);
     }
 }
 
