@@ -17,10 +17,14 @@ void Window::init(core::WindowConfig& config) {
 
     std::cout << "Window initialized successfully\n";
 }
+
 void Window::cleanup() {
     _window = nullptr;
     std::cout << "Window cleaned up successfully\n";
 }
-SDL_Window* Window::get() const { return _window.get(); }
+
+const SDL_Window* Window::get() const { return _window.get(); }
+
+SDL_Window* Window::mutable_get() { return _window.get(); }
 }  // namespace rendering
 }  // namespace piksy

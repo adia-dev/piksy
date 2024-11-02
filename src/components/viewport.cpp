@@ -4,12 +4,10 @@
 #include <components/viewport.hpp>
 #include <core/state.hpp>
 
-#include "core/application.hpp"
-
 namespace piksy {
 namespace components {
 
-Viewport::Viewport(std::shared_ptr<SDL_Renderer> renderer)
+Viewport::Viewport(rendering::Renderer& renderer)
     : _renderer(renderer), _render_texture(nullptr), _viewport_size(800, 600) {
     create_render_texture(static_cast<int>(_viewport_size.x), static_cast<int>(_viewport_size.y));
 }
@@ -27,7 +25,7 @@ void Viewport::create_render_texture(int width, int height) {
         _render_texture = nullptr;
     }
 
-    _render_texture = SDL_CreateTexture(_renderer.get(), SDL_PIXELFORMAT_RGBA8888,
+    _render_texture = SDL_CreateTexture(_renderer.mutable_get(), SDL_PIXELFORMAT_RGBA8888,
                                         SDL_TEXTUREACCESS_TARGET, width, height);
 
     if (!_render_texture) {
@@ -35,7 +33,7 @@ void Viewport::create_render_texture(int width, int height) {
     }
 }
 
-void Viewport::render(SDL_Renderer* renderer) {
+void Viewport::render(SDL_Renderer* renderer, core::State& state) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
@@ -54,7 +52,7 @@ void Viewport::render(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    core::Application::get().state().texture_sprite.render(renderer);
+    state.texture_sprite.render(renderer);
 
     if (_is_dragging) {
         render_selection_rect();
@@ -77,7 +75,7 @@ void Viewport::render(SDL_Renderer* renderer) {
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             _start_dragging_position = _mouse_position;
             _is_dragging = true;
-            handle_viewport_click(viewportX, viewportY);
+            handle_viewport_click(viewportX, viewportY, state);
         }
 
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
@@ -105,11 +103,11 @@ void Viewport::render_selection_rect() {
         _selection_rect.y = _mouse_position.y;
     }
 
-    SDL_SetRenderDrawColor(_renderer.get(), 255, 0, 0, 255);
-    SDL_RenderDrawRect(_renderer.get(), &_selection_rect);
+    SDL_SetRenderDrawColor(_renderer.mutable_get(), 255, 0, 0, 255);
+    SDL_RenderDrawRect(_renderer.mutable_get(), &_selection_rect);
 }
 
-void Viewport::handle_viewport_click(float x, float y) {
+void Viewport::handle_viewport_click(float x, float y, core::State& state) {
     {
         SDL_Color pixel_color = get_pixel_color(static_cast<int>(x), static_cast<int>(y));
 
@@ -117,7 +115,7 @@ void Viewport::handle_viewport_click(float x, float y) {
                pixel_color.b, pixel_color.a);
     }
 
-    auto& sprite = core::Application::get().mutable_state().texture_sprite;
+    auto& sprite = state.texture_sprite;
     SDL_Rect rect = sprite.rect();
     if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
         sprite.set_selected(true);
@@ -131,8 +129,8 @@ SDL_Color Viewport::get_pixel_color(int x, int y) {
     Uint32 pixel;
     SDL_Color pixel_color = SDL_Color{0, 0, 0, 0};
 
-    SDL_SetRenderTarget(_renderer.get(), _render_texture);
-    if (SDL_RenderReadPixels(_renderer.get(), &pixel_rect, SDL_PIXELFORMAT_RGBA8888, &pixel,
+    SDL_SetRenderTarget(_renderer.mutable_get(), _render_texture);
+    if (SDL_RenderReadPixels(_renderer.mutable_get(), &pixel_rect, SDL_PIXELFORMAT_RGBA8888, &pixel,
                              sizeof(pixel)) < 0) {
         SDL_Log("SDL_RenderReadPixels failed: %s", SDL_GetError());
         return pixel_color;
@@ -141,7 +139,7 @@ SDL_Color Viewport::get_pixel_color(int x, int y) {
     SDL_GetRGBA(pixel, SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888), &pixel_color.r, &pixel_color.g,
                 &pixel_color.b, &pixel_color.a);
 
-    SDL_SetRenderTarget(_renderer.get(), nullptr);
+    SDL_SetRenderTarget(_renderer.mutable_get(), nullptr);
 
     return pixel_color;
 }

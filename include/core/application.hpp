@@ -9,6 +9,7 @@
 #include <core/config.hpp>
 #include <core/state.hpp>
 #include <memory>
+#include <rendering/renderer.hpp>
 #include <rendering/window.hpp>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
@@ -30,7 +31,8 @@ class Application {
 
     const Config &config() const { return _config; }
 
-    std::shared_ptr<SDL_Renderer> renderer();
+    rendering::Renderer &mutable_renderer();
+    const rendering::Renderer &renderer() const;
 
    private:
     Application();
@@ -43,7 +45,7 @@ class Application {
 
     // TODO: Wrap these into RAII classes
     rendering::Window _window;
-    std::shared_ptr<SDL_Renderer> _renderer{nullptr, SDL_DestroyRenderer};
+    rendering::Renderer _renderer;
 
     ImGuiIO *_io = nullptr;
 

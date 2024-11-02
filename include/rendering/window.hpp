@@ -14,7 +14,8 @@ class Window {
     void init(core::WindowConfig& config);
     void cleanup();
 
-    SDL_Window* get() const;
+    const SDL_Window* get() const;
+    SDL_Window* mutable_get();
 
    private:
     std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> _window{nullptr, SDL_DestroyWindow};
