@@ -4,7 +4,7 @@
 #include <components/viewport.hpp>
 #include <core/state.hpp>
 
-#include "managers/state_manager.hpp"
+#include "core/application.hpp"
 
 namespace piksy {
 namespace components {
@@ -54,7 +54,7 @@ void Viewport::render(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    managers::StateManager::texture_sprite().render(renderer);
+    core::Application::get().state().texture_sprite.render(renderer);
 
     if (_is_dragging) {
         render_selection_rect();
@@ -117,7 +117,7 @@ void Viewport::handle_viewport_click(float x, float y) {
                pixel_color.b, pixel_color.a);
     }
 
-    auto& sprite = managers::StateManager::texture_sprite();
+    auto& sprite = core::Application::get().mutable_state().texture_sprite;
     SDL_Rect rect = sprite.rect();
     if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
         sprite.set_selected(true);

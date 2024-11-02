@@ -12,15 +12,14 @@ class ResourceManager {
    public:
     static ResourceManager &get();
 
-    static void load_texture(SDL_Renderer *renderer, const std::string &texture_path);
-    static std::shared_ptr<rendering::Texture2D> get_texture(SDL_Renderer *renderer,
-                                                             const std::string &texture_path);
+    void load_texture(SDL_Renderer *renderer, const std::string &texture_path);
+    std::shared_ptr<rendering::Texture2D> get_texture(SDL_Renderer *renderer,
+                                                      const std::string &texture_path);
 
-    static void load_font(SDL_Renderer *renderer, const std::string &font_path);
-    static std::shared_ptr<rendering::Font> get_font(SDL_Renderer *renderer,
-                                                     const std::string &font_path);
+    void load_font(SDL_Renderer *renderer, const std::string &font_path);
+    std::shared_ptr<rendering::Font> get_font(SDL_Renderer *renderer, const std::string &font_path);
 
-    static void cleanup();
+    void cleanup();
 
    private:
     ResourceManager() = default;

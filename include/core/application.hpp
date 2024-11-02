@@ -6,6 +6,8 @@
 
 #include <components/project.hpp>
 #include <components/viewport.hpp>
+#include <core/config.hpp>
+#include <core/state.hpp>
 #include <memory>
 
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
@@ -18,13 +20,18 @@ class Application {
    public:
     static Application &get();
 
-    static void run();
-    static void shutdown();
+    void run();
+    void shutdown();
 
-    static std::shared_ptr<SDL_Renderer> renderer();
+    State &mutable_state() { return _state; }
+    const State &state() const { return _state; }
+
+    const Config &config() const { return _config; }
+
+    std::shared_ptr<SDL_Renderer> renderer();
 
    private:
-    Application() = default;
+    Application();
     ~Application();
 
     Application &operator=(Application &&) = delete;
@@ -38,15 +45,14 @@ class Application {
 
     ImGuiIO *_io = nullptr;
 
-    int _window_width = 1440;
-    int _window_height = 900;
+    Config _config;
 
     bool _show_demo_window = true;
     bool _is_running = true;
-    bool _cleaned_up = false;
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     std::unique_ptr<components::Viewport> _viewport{nullptr};
+    State _state;
 
     // Components
     components::Project _projectComponent;
