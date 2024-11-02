@@ -109,11 +109,11 @@ void Application::init_state() {
     auto texture = managers::ResourceManager::get().get_texture(
         _renderer.mutable_get(), std::string(RESOURCE_DIR) + "/textures/janemba.png");
 
-    _state.texture_sprite = rendering::Sprite(texture);
+    _state.texture_sprite = rendering::Sprite(nullptr);
 }
 
 void Application::init_components() {
-    _viewport = std::make_unique<components::Viewport>(_renderer);
+    _viewportComponent = std::make_unique<components::Viewport>(_renderer);
 }
 
 void Application::cleanup() {
@@ -194,12 +194,9 @@ void Application::render() {
         ImGui::End();
     }
 
-    _viewport->render(_renderer.mutable_get(), _state);
-
-    ImGui::Begin("Inspector");
-    ImGui::End();
-
-    _projectComponent.render();
+    _viewportComponent->render(_state);
+    _inspectorComponent.render(_state);
+    _projectComponent.render(_renderer, _state);
 
     ImGui::ShowDemoWindow(&_show_demo_window);
 

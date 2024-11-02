@@ -12,6 +12,8 @@
 #include <rendering/renderer.hpp>
 #include <rendering/window.hpp>
 
+#include "components/inspector.hpp"
+
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
@@ -55,11 +57,12 @@ class Application {
     bool _is_running = true;
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    std::unique_ptr<components::Viewport> _viewport{nullptr};
+    std::unique_ptr<components::Viewport> _viewportComponent{nullptr};
     State _state;
 
     // Components
     components::Project _projectComponent;
+    components::Inspector _inspectorComponent;
 
     void init();
     void init_sdl2();

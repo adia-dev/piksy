@@ -9,8 +9,8 @@ namespace piksy {
 namespace core {
 
 struct WindowConfig {
-    unsigned int width = 1920;
-    unsigned int height = 1920;
+    unsigned int width = 1440;
+    unsigned int height = 900;
 
     std::string title = "Piksy - App";
     SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);

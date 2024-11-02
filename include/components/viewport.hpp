@@ -14,12 +14,15 @@ class Viewport {
     explicit Viewport(rendering::Renderer& renderer);
     ~Viewport();
 
-    void render(SDL_Renderer* renderer, core::State& state);
+    void render(core::State& state);
 
    private:
     void create_render_texture(int width, int height);
-    void render_selection_rect();
     void handle_viewport_click(float x, float y, core::State& state);
+
+    void render_selection_rect();
+    void render_grid_background();
+
     SDL_Color get_pixel_color(int x, int y);
 
     // replace to pointer to RAII
@@ -30,6 +33,7 @@ class Viewport {
     ImVec2 _start_dragging_position, _mouse_position;
     SDL_Rect _selection_rect;
     bool _is_dragging = false;
+    int _grid_cell_size = 20;
 };
 }  // namespace components
 }  // namespace piksy

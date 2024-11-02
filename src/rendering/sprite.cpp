@@ -8,6 +8,8 @@ Sprite::Sprite() : _texture(nullptr), _rect({}), _frame_rect({}), _selected(fals
 
 Sprite::Sprite(std::shared_ptr<Texture2D> texture, const SDL_Rect &rect, const SDL_Rect &frame_rect)
     : _texture(texture), _rect(rect), _frame_rect(frame_rect) {
+    if (texture == nullptr) return;
+
     if (_frame_rect.w == 0) {
         _frame_rect.w = texture->width();
     }
@@ -39,7 +41,17 @@ void Sprite::set_selected(bool selected) { _selected = selected; }
 
 bool Sprite::is_selected() const { return _selected; }
 
-void Sprite::set_texture(std::shared_ptr<Texture2D> texture) { _texture = texture; }
+void Sprite::set_texture(std::shared_ptr<Texture2D> texture) {
+    _texture = texture;
+
+    if (texture == nullptr) return;
+
+    _frame_rect.w = texture->width();
+    _frame_rect.h = texture->height();
+
+    _rect.w = texture->width();
+    _rect.h = texture->height();
+}
 
 std::shared_ptr<Texture2D> Sprite::texture() const { return _texture; }
 

@@ -33,7 +33,7 @@ void Viewport::create_render_texture(int width, int height) {
     }
 }
 
-void Viewport::render(SDL_Renderer* renderer, core::State& state) {
+void Viewport::render(core::State& state) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
@@ -47,18 +47,22 @@ void Viewport::render(SDL_Renderer* renderer, core::State& state) {
                               static_cast<int>(_viewport_size.y));
     }
 
-    SDL_SetRenderTarget(renderer, _render_texture);
+    SDL_SetRenderTarget(_renderer.mutable_get(), _render_texture);
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(_renderer.mutable_get(), 0, 0, 0, 255);
+    SDL_RenderClear(_renderer.mutable_get());
 
-    state.texture_sprite.render(renderer);
+    render_grid_background();
+
+    if (state.texture_sprite.texture() != nullptr) {
+        state.texture_sprite.render(_renderer.mutable_get());
+    }
 
     if (_is_dragging) {
         render_selection_rect();
     }
 
-    SDL_SetRenderTarget(renderer, nullptr);
+    SDL_SetRenderTarget(_renderer.mutable_get(), nullptr);
 
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
@@ -144,5 +148,15 @@ SDL_Color Viewport::get_pixel_color(int x, int y) {
     return pixel_color;
 }
 
+void Viewport::render_grid_background() {
+    SDL_SetRenderDrawColor(_renderer.mutable_get(), 33, 33, 33, 25);
+
+    for (size_t y = 0; y < _viewport_size.y; y += _grid_cell_size) {
+        SDL_RenderDrawLine(_renderer.mutable_get(), 0, y, _viewport_size.x, y);
+        for (size_t x = 0; x < _viewport_size.x; x += _grid_cell_size) {
+            SDL_RenderDrawLine(_renderer.mutable_get(), x, 0, x, _viewport_size.y);
+        }
+    }
+}
 }  // namespace components
 }  // namespace piksy
