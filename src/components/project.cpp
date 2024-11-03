@@ -9,8 +9,8 @@ namespace fs = std::filesystem;
 namespace piksy {
 namespace components {
 
-Project::Project(rendering::Renderer& renderer, managers::ResourceManager& resource_manager)
-    : _renderer(renderer), _resource_manager(resource_manager) {}
+Project::Project(managers::ResourceManager& resource_manager)
+    : _resource_manager(resource_manager) {}
 
 void Project::update() {}
 

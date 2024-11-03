@@ -12,7 +12,7 @@ namespace components {
 
 class Project : public UIComponent {
    public:
-    explicit Project(rendering::Renderer& renderer, managers::ResourceManager& resource_manager);
+    explicit Project(managers::ResourceManager& resource_manager);
 
     void update() override;
     void render(core::State& state) override;
@@ -21,7 +21,6 @@ class Project : public UIComponent {
     bool try_select_texture(const std::filesystem::path& file_path, core::State& state);
     void render_file_browser(core::State& state);
 
-    rendering::Renderer& _renderer;
     managers::ResourceManager& _resource_manager;
 };
 

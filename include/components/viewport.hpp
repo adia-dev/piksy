@@ -6,6 +6,7 @@
 
 #include <components/ui_component.hpp>
 #include <core/state.hpp>
+#include <managers/resource_manager.hpp>
 #include <rendering/renderer.hpp>
 
 namespace piksy {
@@ -13,15 +14,18 @@ namespace components {
 
 class Viewport : public UIComponent {
    public:
-    explicit Viewport(rendering::Renderer& renderer);
+    explicit Viewport(rendering::Renderer& renderer, managers::ResourceManager& resource_manager);
     ~Viewport();
 
     void update() override;
     void render(core::State& state) override;
 
+    void notify_dropped_file(core::State& state, const std::string& dropped_file_path);
+
    private:
     void create_render_texture(int width, int height);
     void handle_viewport_click(float x, float y, core::State& state);
+    void render_placeholder_text();
 
     void render_selection_rect();
     void render_grid_background();
@@ -55,6 +59,7 @@ class Viewport : public UIComponent {
     };
 
     rendering::Renderer& _renderer;
+    managers::ResourceManager& _resource_manager;
     SDL_Texture* _render_texture = nullptr;
 
     ImVec2 _viewport_size;

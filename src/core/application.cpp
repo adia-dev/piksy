@@ -11,6 +11,7 @@
 #include <managers/resource_manager.hpp>
 #include <memory>
 
+#include "components/viewport.hpp"
 #include "core/logger.hpp"
 
 namespace piksy {
@@ -108,18 +109,14 @@ void Application::init_fonts() {
     _resource_manager.load_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
 }
 
-void Application::init_state() {
-    auto texture =
-        _resource_manager.get_texture(std::string(RESOURCE_DIR) + "/textures/janemba.png");
-
-    _state.texture_sprite = rendering::Sprite(nullptr);
-}
+void Application::init_state() {}
 
 void Application::init_components() {
-    _ui_components[0] = std::make_unique<components::Viewport>(_renderer);
-    _ui_components[1] = std::make_unique<components::Console>();
-    _ui_components[2] = std::make_unique<components::Inspector>();
-    _ui_components[3] = std::make_unique<components::Project>(_renderer, _resource_manager);
+    _ui_components.emplace("Viewport",
+                           std::make_unique<components::Viewport>(_renderer, _resource_manager));
+    _ui_components.emplace("Console", std::make_unique<components::Console>());
+    _ui_components.emplace("Inspector", std::make_unique<components::Inspector>());
+    _ui_components.emplace("Project", std::make_unique<components::Project>(_resource_manager));
 }
 
 void Application::cleanup() {
@@ -144,7 +141,17 @@ void Application::handle_events() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL2_ProcessEvent(&event);
-        if (event.type == SDL_QUIT) _is_running = false;
+        if (event.type == SDL_QUIT) {
+            _is_running = false;
+        } else if (event.type == SDL_DROPFILE) {
+            const char *dropped_filedir = event.drop.file;
+
+            ((components::Viewport *)_ui_components["Viewport"].get())
+                ->notify_dropped_file(_state, dropped_filedir);
+
+            SDL_free((void *)dropped_filedir);
+        }
+
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
             event.window.windowID == SDL_GetWindowID(_window.get())) {
             _is_running = false;
@@ -166,7 +173,7 @@ void Application::handle_events() {
 }
 
 void Application::update() {
-    for (auto &component : _ui_components) {
+    for (auto &[name, component] : _ui_components) {
         component->update();
     }
 }
@@ -225,7 +232,7 @@ void Application::render() {
         ImGui::End();
     }
 
-    for (auto &component : _ui_components) {
+    for (auto &[name, component] : _ui_components) {
         component->render(_state);
     }
 

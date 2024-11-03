@@ -13,6 +13,7 @@
 #include <memory>
 #include <rendering/renderer.hpp>
 #include <rendering/window.hpp>
+#include <unordered_map>
 
 #include "managers/resource_manager.hpp"
 
@@ -59,12 +60,16 @@ class Application {
     Config _config;
     State _state;
 
-    std::array<std::unique_ptr<components::UIComponent>, 4> _ui_components;
+    std::unordered_map<std::string, std::unique_ptr<components::UIComponent>> _ui_components;
 
     // NOTE: too many init methods, code smell like sh*t
     void init();
+
+    // Create a Facade of those two classes in order to initialize them
     void init_sdl2();
     void init_imgui();
+
+    // This is smelly
     void init_textures();
     void init_fonts();
     void init_state();

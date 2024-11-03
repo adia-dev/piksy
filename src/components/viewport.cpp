@@ -1,5 +1,6 @@
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
+#include <SDL_ttf.h>
 #include <imgui.h>
 
 #include <components/viewport.hpp>
@@ -11,8 +12,11 @@
 namespace piksy {
 namespace components {
 
-Viewport::Viewport(rendering::Renderer& renderer)
-    : _renderer(renderer), _render_texture(nullptr), _viewport_size(800, 600) {
+Viewport::Viewport(rendering::Renderer& renderer, managers::ResourceManager& resource_manager)
+    : _renderer(renderer),
+      _resource_manager(resource_manager),
+      _render_texture(nullptr),
+      _viewport_size(800, 600) {
     create_render_texture(static_cast<int>(_viewport_size.x), static_cast<int>(_viewport_size.y));
 }
 
@@ -66,6 +70,30 @@ void Viewport::render(core::State& state) {
     if (state.texture_sprite.texture() != nullptr) {
         state.texture_sprite.render(_renderer.get(), _zoom_state.current_scale,
                                     _pan_state.current_offset.x, _pan_state.current_offset.y);
+    } else {
+        auto font = _resource_manager.get_font(std::string(RESOURCE_DIR) +
+                                               "/fonts/PixelifySans-Regular.ttf");
+        if (font != nullptr) {
+            const char* placeholder_text = "No texture loaded. Please insert a texture.";
+            SDL_Color text_color = {255, 255, 255, 255};  // White color
+            SDL_Surface* text_surface =
+                TTF_RenderText_Blended(font.get()->get(), placeholder_text, text_color);
+            if (text_surface != nullptr) {
+                SDL_Texture* text_texture =
+                    SDL_CreateTextureFromSurface(_renderer.get(), text_surface);
+                if (text_texture != nullptr) {
+                    // Calculate the position to center the text
+                    int text_width = text_surface->w;
+                    int text_height = text_surface->h;
+                    SDL_Rect dest_rect = {static_cast<int>((_viewport_size.x - text_width) / 2),
+                                          static_cast<int>((_viewport_size.y - text_height) / 2),
+                                          text_width, text_height};
+                    SDL_RenderCopy(_renderer.get(), text_texture, nullptr, &dest_rect);
+                    SDL_DestroyTexture(text_texture);
+                }
+                SDL_FreeSurface(text_surface);
+            }
+        }
     }
 
     if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
@@ -79,6 +107,15 @@ void Viewport::render(core::State& state) {
     handle_mouse_input(state);
 
     ImGui::End();
+}
+
+void Viewport::notify_dropped_file(core::State& state, const std::string& dropped_file_path) {
+    core::Logger::debug("Dropped file into the Viewport: %s", dropped_file_path.c_str());
+    try {
+        state.texture_sprite.set_texture(_resource_manager.get_texture(dropped_file_path));
+    } catch (const std::runtime_error& ex) {
+        core::Logger::error("Failed to select a texture in the project: %s", ex.what());
+    }
 }
 
 void Viewport::handle_mouse_input(core::State& state) {
