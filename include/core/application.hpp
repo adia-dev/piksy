@@ -14,6 +14,8 @@
 #include <rendering/renderer.hpp>
 #include <rendering/window.hpp>
 
+#include "managers/resource_manager.hpp"
+
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
@@ -23,8 +25,8 @@ namespace core {
 
 class Application {
    public:
-    // NOTE: might have to remove this, this doesn't necessarily need to be a singleton
-    static Application &get();
+    Application();
+    ~Application();
 
     void run();
     void shutdown();
@@ -38,9 +40,6 @@ class Application {
     const rendering::Renderer &renderer() const;
 
    private:
-    Application();
-    ~Application();
-
     Application &operator=(Application &&) = delete;
     Application &operator=(const Application &) = delete;
     Application(Application &&) = delete;
@@ -48,6 +47,7 @@ class Application {
 
     rendering::Window _window;
     rendering::Renderer _renderer;
+    managers::ResourceManager _resource_manager;
 
     ImGuiIO *_io = nullptr;
 

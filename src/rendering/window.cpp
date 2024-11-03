@@ -1,4 +1,3 @@
-#include <iostream>
 #include <rendering/window.hpp>
 
 #include "core/logger.hpp"
@@ -8,7 +7,7 @@ namespace rendering {
 
 Window::~Window() { cleanup(); }
 
-void Window::init(core::WindowConfig& config) {
+void Window::init(const core::WindowConfig& config) {
     _window.reset(SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
                                    SDL_WINDOWPOS_CENTERED, config.width, config.height,
                                    config.flags));
@@ -26,6 +25,6 @@ void Window::cleanup() {
 
 const SDL_Window* Window::get() const { return _window.get(); }
 
-SDL_Window* Window::mutable_get() { return _window.get(); }
+SDL_Window* Window::get() { return _window.get(); }
 }  // namespace rendering
 }  // namespace piksy

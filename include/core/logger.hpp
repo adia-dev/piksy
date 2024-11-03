@@ -2,6 +2,7 @@
 
 #include <core/config.hpp>
 #include <core/logger.hpp>
+#include <cstdarg>
 #include <cstdio>
 #include <ctime>
 #include <deque>
@@ -10,12 +11,6 @@
 #include <mutex>
 #include <sstream>
 #include <string>
-#if __cplusplus >= 202002L
-#include <format>
-using std::format;
-#else
-#include <cstdarg>
-#endif
 
 namespace piksy::core {
 
@@ -85,13 +80,6 @@ class Logger {
         if (level < _config->level) return;
 
         std::string message;
-#if __cplusplus >= 202002L
-        if constexpr (sizeof...(args) > 0) {
-            message = std::vformat(format_str, std::make_format_args(args...));
-        } else {
-            message = format_str;
-        }
-#else
         if constexpr (sizeof...(args) > 0) {
             constexpr size_t BUFFER_SIZE = 1024;
             char buffer[BUFFER_SIZE];
@@ -100,7 +88,6 @@ class Logger {
         } else {
             message = format_str;
         }
-#endif
 
         std::string formatted_message = format_message(level, message);
         std::lock_guard<std::mutex> lock(_mutex);

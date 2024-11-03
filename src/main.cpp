@@ -3,7 +3,7 @@
 
 int main() {
     try {
-        auto& app = piksy::core::Application::get();
+        piksy::core::Application app;
         app.run();
     } catch (const std::runtime_error& ex) {
         piksy::core::Logger::fatal("Application exited with a runtime exception:\nException: %s",

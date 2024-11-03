@@ -1,15 +1,16 @@
 #include <imgui.h>
 
 #include <components/project.hpp>
-#include <iostream>
+#include <core/logger.hpp>
 #include <managers/resource_manager.hpp>
-
-#include "core/logger.hpp"
 
 namespace fs = std::filesystem;
 
 namespace piksy {
 namespace components {
+
+Project::Project(rendering::Renderer& renderer, managers::ResourceManager& resource_manager)
+    : _renderer(renderer), _resource_manager(resource_manager) {}
 
 void Project::update() {}
 
@@ -71,8 +72,7 @@ void Project::render_file_browser(core::State& state) {
 
 bool Project::try_select_texture(const std::filesystem::path& file_path, core::State& state) {
     try {
-        state.texture_sprite.set_texture(managers::ResourceManager::get().get_texture(
-            _renderer.mutable_get(), file_path.string()));
+        state.texture_sprite.set_texture(_resource_manager.get_texture(file_path.string()));
         return true;
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());

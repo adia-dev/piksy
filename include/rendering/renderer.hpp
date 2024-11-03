@@ -17,7 +17,7 @@ class Renderer {
     void cleanup();
 
     const SDL_Renderer* get() const;
-    SDL_Renderer* mutable_get();
+    SDL_Renderer* get();
 
    private:
     std::shared_ptr<SDL_Renderer> _renderer{nullptr, SDL_DestroyRenderer};

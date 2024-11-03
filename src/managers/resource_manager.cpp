@@ -1,59 +1,43 @@
+#include <core/logger.hpp>
 #include <filesystem>
 #include <managers/resource_manager.hpp>
-#include <stdexcept>
-
-#include "core/logger.hpp"
 
 namespace fs = std::filesystem;
 
 namespace piksy {
 namespace managers {
 
-ResourceManager &ResourceManager::get() {
-    static ResourceManager instance;
-    return instance;
-}
-
 void ResourceManager::cleanup() {
-    ResourceManager &resource_manager = get();
-    resource_manager._textures.clear();
-    resource_manager._fonts.clear();
+    _textures.clear();
+    _fonts.clear();
 
     core::Logger::debug("Resource manager cleanup up successfully");
 }
 
-void ResourceManager::load_texture(SDL_Renderer *renderer, const std::string &texture_path) {
-    get_texture(renderer, texture_path);
-}
+void ResourceManager::load_texture(const std::string &texture_path) { get_texture(texture_path); }
 
 std::shared_ptr<rendering::Texture2D> ResourceManager::get_texture(
-    SDL_Renderer *renderer, const std::string &texture_path) {
-    ResourceManager &resource_manager = get();
-
-    auto texture_found = resource_manager._textures.find(texture_path);
-    if (texture_found != resource_manager._textures.end()) {
+    const std::string &texture_path) {
+    auto texture_found = _textures.find(texture_path);
+    if (texture_found != _textures.end()) {
         return texture_found->second;
     }
 
     if (!fs::exists(texture_path)) {
-        core::Logger::fatal("Failed to get the texture: File not found, Path: %s", texture_path.c_str());
+        core::Logger::fatal("Failed to get the texture: File not found, Path: %s",
+                            texture_path.c_str());
     }
 
-    resource_manager._textures.emplace(
-        texture_path, std::make_shared<rendering::Texture2D>(renderer, texture_path));
-    return resource_manager._textures.at(texture_path);
+    _textures.emplace(texture_path,
+                      std::make_shared<rendering::Texture2D>(_renderer.get(), texture_path));
+    return _textures.at(texture_path);
 }
 
-void ResourceManager::load_font(SDL_Renderer *renderer, const std::string &font_path) {
-    get_font(renderer, font_path);
-}
+void ResourceManager::load_font(const std::string &font_path) { get_font(font_path); }
 
-std::shared_ptr<rendering::Font> ResourceManager::get_font(SDL_Renderer *renderer,
-                                                           const std::string &font_path) {
-    ResourceManager &resource_manager = get();
-
-    auto font_found = resource_manager._fonts.find(font_path);
-    if (font_found != resource_manager._fonts.end()) {
+std::shared_ptr<rendering::Font> ResourceManager::get_font(const std::string &font_path) {
+    auto font_found = _fonts.find(font_path);
+    if (font_found != _fonts.end()) {
         return font_found->second;
     }
 
@@ -61,8 +45,8 @@ std::shared_ptr<rendering::Font> ResourceManager::get_font(SDL_Renderer *rendere
         core::Logger::fatal("Failed to get the font: File not found, Path: %s", font_path.c_str());
     }
 
-    resource_manager._fonts.emplace(font_path, std::make_shared<rendering::Font>(font_path));
-    return resource_manager._fonts.at(font_path);
+    _fonts.emplace(font_path, std::make_shared<rendering::Font>(font_path));
+    return _fonts.at(font_path);
 }
 
 }  // namespace managers

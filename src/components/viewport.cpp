@@ -29,7 +29,7 @@ void Viewport::create_render_texture(int width, int height) {
         _render_texture = nullptr;
     }
 
-    _render_texture = SDL_CreateTexture(_renderer.mutable_get(), SDL_PIXELFORMAT_RGBA8888,
+    _render_texture = SDL_CreateTexture(_renderer.get(), SDL_PIXELFORMAT_RGBA8888,
                                         SDL_TEXTUREACCESS_TARGET, width, height);
 
     if (!_render_texture) {
@@ -56,15 +56,15 @@ void Viewport::render(core::State& state) {
                               static_cast<int>(_viewport_size.y));
     }
 
-    SDL_SetRenderTarget(_renderer.mutable_get(), _render_texture);
+    SDL_SetRenderTarget(_renderer.get(), _render_texture);
 
-    SDL_SetRenderDrawColor(_renderer.mutable_get(), 0, 0, 0, 255);
-    SDL_RenderClear(_renderer.mutable_get());
+    SDL_SetRenderDrawColor(_renderer.get(), 0, 0, 0, 255);
+    SDL_RenderClear(_renderer.get());
 
     render_grid_background();
 
     if (state.texture_sprite.texture() != nullptr) {
-        state.texture_sprite.render(_renderer.mutable_get(), _zoom_state.current_scale,
+        state.texture_sprite.render(_renderer.get(), _zoom_state.current_scale,
                                     _pan_state.current_offset.x, _pan_state.current_offset.y);
     }
 
@@ -72,7 +72,7 @@ void Viewport::render(core::State& state) {
         render_selection_rect();
     }
 
-    SDL_SetRenderTarget(_renderer.mutable_get(), nullptr);
+    SDL_SetRenderTarget(_renderer.get(), nullptr);
 
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
@@ -144,11 +144,11 @@ void Viewport::render_selection_rect() {
     _selection_rect = {std::min(start_x, current_x), std::min(start_y, current_y),
                        std::abs(current_x - start_x), std::abs(current_y - start_y)};
 
-    SDL_SetRenderDrawColor(_renderer.mutable_get(), 255, 255, 0, 255);
-    SDL_RenderDrawRect(_renderer.mutable_get(), &_selection_rect);
+    SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 255);
+    SDL_RenderDrawRect(_renderer.get(), &_selection_rect);
 
-    SDL_SetRenderDrawColor(_renderer.mutable_get(), 255, 255, 0, 25);
-    SDL_RenderFillRect(_renderer.mutable_get(), &_selection_rect);
+    SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 25);
+    SDL_RenderFillRect(_renderer.get(), &_selection_rect);
 }
 
 void Viewport::handle_viewport_click(float x, float y, core::State& state) {
@@ -175,8 +175,8 @@ SDL_Color Viewport::get_pixel_color(int x, int y) {
     Uint32 pixel;
     SDL_Color pixel_color = SDL_Color{0, 0, 0, 0};
 
-    SDL_SetRenderTarget(_renderer.mutable_get(), _render_texture);
-    if (SDL_RenderReadPixels(_renderer.mutable_get(), &pixel_rect, SDL_PIXELFORMAT_RGBA8888, &pixel,
+    SDL_SetRenderTarget(_renderer.get(), _render_texture);
+    if (SDL_RenderReadPixels(_renderer.get(), &pixel_rect, SDL_PIXELFORMAT_RGBA8888, &pixel,
                              sizeof(pixel)) < 0) {
         SDL_Log("SDL_RenderReadPixels failed: %s", SDL_GetError());
         return pixel_color;
@@ -185,13 +185,13 @@ SDL_Color Viewport::get_pixel_color(int x, int y) {
     SDL_GetRGBA(pixel, SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888), &pixel_color.r, &pixel_color.g,
                 &pixel_color.b, &pixel_color.a);
 
-    SDL_SetRenderTarget(_renderer.mutable_get(), nullptr);
+    SDL_SetRenderTarget(_renderer.get(), nullptr);
 
     return pixel_color;
 }
 
 void Viewport::render_grid_background() {
-    SDL_SetRenderDrawColor(_renderer.mutable_get(), 33, 33, 33, 155);
+    SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
 
     float scaled_grid_cell_size = std::max(_grid_cell_size * _zoom_state.current_scale, 1.0f);
 
@@ -208,7 +208,7 @@ void Viewport::render_grid_background() {
     for (int i = 0; i < num_vertical_lines; ++i) {
         float x = start_x + i * scaled_grid_cell_size;
         if (x >= 0 && x <= _viewport_size.x) {
-            SDL_RenderDrawLine(_renderer.mutable_get(), static_cast<int>(x), 0, static_cast<int>(x),
+            SDL_RenderDrawLine(_renderer.get(), static_cast<int>(x), 0, static_cast<int>(x),
                                static_cast<int>(_viewport_size.y));
         }
     }
@@ -216,7 +216,7 @@ void Viewport::render_grid_background() {
     for (int j = 0; j < num_horizontal_lines; ++j) {
         float y = start_y + j * scaled_grid_cell_size;
         if (y >= 0 && y <= _viewport_size.y) {
-            SDL_RenderDrawLine(_renderer.mutable_get(), 0, static_cast<int>(y),
+            SDL_RenderDrawLine(_renderer.get(), 0, static_cast<int>(y),
                                static_cast<int>(_viewport_size.x), static_cast<int>(y));
         }
     }

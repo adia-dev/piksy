@@ -9,7 +9,7 @@ class UIComponent {
     virtual void update() = 0;
     virtual void render(core::State& state) = 0;
 
-    virtual ~UIComponent() {}
+    virtual ~UIComponent() = default;
 
    private:
 };

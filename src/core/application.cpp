@@ -8,26 +8,21 @@
 #include <components/project.hpp>
 #include <core/application.hpp>
 #include <core/state.hpp>
-#include <iostream>
 #include <managers/resource_manager.hpp>
+#include <memory>
 
 #include "core/logger.hpp"
 
 namespace piksy {
 namespace core {
 
-Application &Application::get() {
-    static Application instance;
-    return instance;
-}
-
-Application::Application() { init(); }
+Application::Application() : _renderer(), _resource_manager(_renderer) { init(); }
 
 Application::~Application() { cleanup(); }
 
 void Application::run() {
     while (_is_running) {
-        if (SDL_GetWindowFlags(_window.mutable_get()) & SDL_WINDOW_MINIMIZED) {
+        if (SDL_GetWindowFlags(_window.get()) & SDL_WINDOW_MINIMIZED) {
             SDL_Delay(10);
             continue;
         }
@@ -39,8 +34,7 @@ void Application::run() {
 }
 
 void Application::shutdown() {
-    auto &app = get();
-    app._is_running = false;
+    _is_running = false;
 
     core::Logger::debug("Shutting down the application...");
 }
@@ -84,8 +78,8 @@ void Application::init_imgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    ImGui_ImplSDL2_InitForSDLRenderer(_window.mutable_get(), _renderer.mutable_get());
-    ImGui_ImplSDLRenderer2_Init(_renderer.mutable_get());
+    ImGui_ImplSDL2_InitForSDLRenderer(_window.get(), _renderer.get());
+    ImGui_ImplSDLRenderer2_Init(_renderer.get());
 
     _io = &ImGui::GetIO();
     (void)*_io;
@@ -107,18 +101,16 @@ void Application::init_imgui() {
 }
 
 void Application::init_textures() {
-    managers::ResourceManager::get().load_texture(
-        _renderer.mutable_get(), std::string(RESOURCE_DIR) + "/textures/janemba.png");
+    _resource_manager.load_texture(std::string(RESOURCE_DIR) + "/textures/janemba.png");
 }
 
 void Application::init_fonts() {
-    managers::ResourceManager::get().load_font(
-        _renderer.mutable_get(), std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
+    _resource_manager.load_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
 }
 
 void Application::init_state() {
-    auto texture = managers::ResourceManager::get().get_texture(
-        _renderer.mutable_get(), std::string(RESOURCE_DIR) + "/textures/janemba.png");
+    auto texture =
+        _resource_manager.get_texture(std::string(RESOURCE_DIR) + "/textures/janemba.png");
 
     _state.texture_sprite = rendering::Sprite(nullptr);
 }
@@ -127,11 +119,11 @@ void Application::init_components() {
     _ui_components[0] = std::make_unique<components::Viewport>(_renderer);
     _ui_components[1] = std::make_unique<components::Console>();
     _ui_components[2] = std::make_unique<components::Inspector>();
-    _ui_components[3] = std::make_unique<components::Project>(_renderer);
+    _ui_components[3] = std::make_unique<components::Project>(_renderer, _resource_manager);
 }
 
 void Application::cleanup() {
-    managers::ResourceManager::get().cleanup();
+    _resource_manager.cleanup();
 
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -139,8 +131,8 @@ void Application::cleanup() {
 
     TTF_Quit();
 
-    SDL_DestroyRenderer(_renderer.mutable_get());
-    SDL_DestroyWindow(_window.mutable_get());
+    SDL_DestroyRenderer(_renderer.get());
+    SDL_DestroyWindow(_window.get());
     SDL_Quit();
 
     _io = nullptr;
@@ -154,7 +146,7 @@ void Application::handle_events() {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT) _is_running = false;
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
-            event.window.windowID == SDL_GetWindowID(_window.mutable_get())) {
+            event.window.windowID == SDL_GetWindowID(_window.get())) {
             _is_running = false;
         }
 
@@ -240,15 +232,15 @@ void Application::render() {
     // ImGui::ShowDemoWindow(&_show_demo_window);
 
     ImGui::Render();
-    SDL_RenderSetScale(_renderer.mutable_get(), _io->DisplayFramebufferScale.x,
+    SDL_RenderSetScale(_renderer.get(), _io->DisplayFramebufferScale.x,
                        _io->DisplayFramebufferScale.y);
-    SDL_SetRenderDrawColor(_renderer.mutable_get(), static_cast<Uint8>(_clear_color.x * 255),
+    SDL_SetRenderDrawColor(_renderer.get(), static_cast<Uint8>(_clear_color.x * 255),
                            static_cast<Uint8>(_clear_color.y * 255),
                            static_cast<Uint8>(_clear_color.z * 255),
                            static_cast<Uint8>(_clear_color.w * 255));
-    SDL_RenderClear(_renderer.mutable_get());
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer.mutable_get());
-    SDL_RenderPresent(_renderer.mutable_get());
+    SDL_RenderClear(_renderer.get());
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer.get());
+    SDL_RenderPresent(_renderer.get());
 }
 
 }  // namespace core
