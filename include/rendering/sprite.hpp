@@ -33,7 +33,8 @@ class Sprite {
 
     void move(int dx, int dy);
 
-    void render(SDL_Renderer *renderer) const;
+    void render(SDL_Renderer *renderer, float scale = 1.0f, float offset_x = 0.0f,
+                int offset_y = 0.0f) const;
 
    private:
     std::shared_ptr<Texture2D> _texture;

@@ -2,7 +2,6 @@
 
 #include <SDL_render.h>
 
-#include <iostream>
 #include <memory>
 
 #include "core/config.hpp"

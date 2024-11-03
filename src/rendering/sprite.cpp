@@ -74,7 +74,7 @@ void Sprite::move(int dx, int dy) {
     _rect.y += dy;
 }
 
-void Sprite::render(SDL_Renderer *renderer) const {
+void Sprite::render(SDL_Renderer *renderer, float scale, float offset_x, int offset_y) const {
     if (renderer == nullptr) {
         throw std::runtime_error("Cannot render a sprite if the renderer is null.");
     }
@@ -82,11 +82,15 @@ void Sprite::render(SDL_Renderer *renderer) const {
         throw std::runtime_error("Cannot render a sprite if the texture is null.");
     }
 
-    SDL_RenderCopy(renderer, _texture->get(), &_frame_rect, &_rect);
+    SDL_Rect scaled_rect = {static_cast<int>((_rect.x + offset_x) * scale),
+                            static_cast<int>((_rect.y + offset_y) * scale),
+                            static_cast<int>(_rect.w * scale), static_cast<int>(_rect.h * scale)};
+
+    SDL_RenderCopy(renderer, _texture->get(), &_frame_rect, &scaled_rect);
 
     if (_selected) {
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderDrawRect(renderer, &_rect);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+        SDL_RenderDrawRect(renderer, &scaled_rect);
     }
 }
 }  // namespace rendering

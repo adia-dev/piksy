@@ -1,3 +1,4 @@
+#include <iostream>
 #include <rendering/renderer.hpp>
 
 namespace piksy {
@@ -11,6 +12,10 @@ void Renderer::init(Window& window, core::WindowConfig& config) {
     if (_renderer == nullptr) {
         SDL_Log("Error creating SDL_Renderer!");
         throw std::runtime_error("Error: SDL_CreateRenderer()");
+    }
+
+    if (SDL_SetRenderDrawBlendMode(_renderer.get(), SDL_BLENDMODE_BLEND) < 0) {
+        throw std::runtime_error("Failed to set SDL Renderer blend mode.");
     }
 
     std::cout << "Renderer initialized successfully\n";
