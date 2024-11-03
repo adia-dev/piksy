@@ -1,5 +1,6 @@
 #include <SDL_image.h>
 
+#include <core/logger.hpp>
 #include <filesystem>
 #include <rendering/texture2D.hpp>
 #include <stdexcept>
@@ -34,7 +35,7 @@ void Texture2D::load(SDL_Renderer *renderer) {
     }
 
     if (SDL_QueryTexture(_texture.get(), nullptr, nullptr, &_width, &_height) != 0) {
-        throw std::runtime_error(std::string("SDL_QueryTexture Error: ") + SDL_GetError());
+        core::Logger::fatal("SDL_QueryTexture Error: %s", SDL_GetError());
     }
 }
 

@@ -1,16 +1,16 @@
 #include <core/application.hpp>
-#include <iostream>
+#include <core/logger.hpp>
 
 int main() {
     try {
         auto& app = piksy::core::Application::get();
         app.run();
     } catch (const std::runtime_error& ex) {
-        std::cerr << "Application exited with a runtime exception:\nException: " << ex.what()
-                  << std::endl;
+        piksy::core::Logger::fatal("Application exited with a runtime exception:\nException: %s",
+                                   ex.what());
         return -1;
     } catch (...) {
-        std::cerr << "Application exited with an unexpected exception\n";
+        piksy::core::Logger::fatal("Application exited with an unknown exception.");
         return -1;
     }
 }

@@ -11,6 +11,8 @@
 #include <iostream>
 #include <managers/resource_manager.hpp>
 
+#include "core/logger.hpp"
+
 namespace piksy {
 namespace core {
 
@@ -40,7 +42,7 @@ void Application::shutdown() {
     auto &app = get();
     app._is_running = false;
 
-    std::cout << "Shutting down the application\n";
+    core::Logger::debug("Shutting down the application...");
 }
 
 rendering::Renderer &Application::mutable_renderer() { return _renderer; }
@@ -48,23 +50,26 @@ rendering::Renderer &Application::mutable_renderer() { return _renderer; }
 const rendering::Renderer &Application::renderer() const { return _renderer; }
 
 void Application::init() {
+    Logger::get().init(&_config.logger_config);
+    Logger::info("Initializing the application...");
+
     init_sdl2();
     init_imgui();
     init_textures();
     init_fonts();
     init_state();
     init_components();
+
+    Logger::info("Successfully initialized the application !");
 }
 
 void Application::init_sdl2() {
     if (SDL_Init(_config.init_flags) != 0) {
-        printf("Error: %s\n", SDL_GetError());
-        throw std::runtime_error("Error: SDL_Init()");
+        core::Logger::fatal("Error initializing SDL: %s", SDL_GetError());
     }
 
     if (TTF_Init() < 0) {
-        std::cerr << "Error initializing SDL_ttf: " << TTF_GetError() << std::endl;
-        throw std::runtime_error("Error: TTF_init()");
+        core::Logger::fatal("Error initializing SDL_ttf: %s", TTF_GetError());
     }
 
 #ifdef SDL_HINT_IME_SHOW_UI
@@ -93,8 +98,7 @@ void Application::init_imgui() {
     icons_config.PixelSnapH = true;
 
     _io->IniFilename = _config.imgui_config.ini_filename.c_str();
-    printf("Loading layout from config file at: %s\n", _io->IniFilename);
-
+    core::Logger::debug("Loading layout from config file at: %s", _io->IniFilename);
     /* _io->Fonts->Clear(); */
     /* _io->Fonts->AddFontFromFileTTF(_config.imgui_config.font_filename.c_str(), 14.0f); */
     /* _io->Fonts->Build(); */
@@ -141,7 +145,7 @@ void Application::cleanup() {
 
     _io = nullptr;
 
-    std::cout << "Application successfully cleaned up\n";
+    core::Logger::debug("Application successfully cleaned up");
 }
 
 void Application::handle_events() {

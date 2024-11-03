@@ -10,6 +10,7 @@ INCLUDE_DIR := include
 UNAME_S := $(shell uname -s)
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 RESOURCE_DIR := $(ROOT_DIR)resources
+LOG_DIR := $(ROOT_DIR)logs
 
 # Find source files in src directory and add ImGui sources
 SOURCES := $(shell find $(SOURCES_DIR) -type f -name '*.cpp' -not -name '.null-ls*.cpp')
@@ -33,7 +34,8 @@ CXXFLAGS := -std=c++17 -g -Wall -Wformat \
              -I$(IMGUI_DIR)/backends \
              -I$(SOURCES_DIR) \
              $(shell pkg-config --cflags opencv4) \
-             -DRESOURCE_DIR=\"$(RESOURCE_DIR)\"
+             -DRESOURCE_DIR=\"$(RESOURCE_DIR)\" \
+             -DLOG_DIR=\"$(LOG_DIR)\"
 LIBS := $(shell pkg-config --libs opencv4)
 
 # Platform-Specific Flags and Libraries
@@ -60,7 +62,7 @@ endif
 ##---------------------------------------------------------------------
 
 # Default target
-all: $(EXE)
+all: log $(EXE)
 	@echo "Build complete for $(ECHO_MESSAGE)"
 
 # Link executable
@@ -74,6 +76,9 @@ $(EXE): $(OBJS)
 
 run: $(EXE)
 	$(EXE_DIR)/$(EXE)
+
+log:
+	@mkdir -p $(LOG_DIR)
 
 # Clean up build artifacts
 clean:

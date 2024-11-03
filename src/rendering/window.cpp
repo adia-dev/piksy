@@ -1,6 +1,8 @@
 #include <iostream>
 #include <rendering/window.hpp>
 
+#include "core/logger.hpp"
+
 namespace piksy {
 namespace rendering {
 
@@ -11,16 +13,15 @@ void Window::init(core::WindowConfig& config) {
                                    SDL_WINDOWPOS_CENTERED, config.width, config.height,
                                    config.flags));
     if (_window == nullptr) {
-        std::cerr << "Error: SDL_CreateWindow(): " << SDL_GetError() << std::endl;
-        throw std::runtime_error("Error: SDL_CreateWindow()");
+        core::Logger::fatal("Failed to create a Window: %s", SDL_GetError());
     }
 
-    std::cout << "Window initialized successfully\n";
+    core::Logger::debug("Window initialized successfully");
 }
 
 void Window::cleanup() {
     _window = nullptr;
-    std::cout << "Window cleaned up successfully\n";
+    core::Logger::debug("Window cleanup up successfully");
 }
 
 const SDL_Window* Window::get() const { return _window.get(); }

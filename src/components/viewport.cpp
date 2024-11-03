@@ -6,6 +6,8 @@
 #include <core/state.hpp>
 #include <utils/dump.hpp>
 
+#include "core/logger.hpp"
+
 namespace piksy {
 namespace components {
 
@@ -31,7 +33,7 @@ void Viewport::create_render_texture(int width, int height) {
                                         SDL_TEXTUREACCESS_TARGET, width, height);
 
     if (!_render_texture) {
-        throw std::runtime_error("Failed to create render texture: " + std::string(SDL_GetError()));
+        core::Logger::fatal("Failed to create render texture: %s", SDL_GetError());
     }
 }
 
@@ -155,8 +157,8 @@ void Viewport::handle_viewport_click(float x, float y, core::State& state) {
     float world_y = (y - _pan_state.current_offset.y) / _zoom_state.current_scale;
 
     SDL_Color pixel_color = get_pixel_color(static_cast<int>(world_x), static_cast<int>(world_y));
-    printf("Clicked on a pixel of color (%u, %u, %u, %u)\n", pixel_color.r, pixel_color.g,
-           pixel_color.b, pixel_color.a);
+    core::Logger::debug("Clicked on a pixel of color (%u, %u, %u, %u)", pixel_color.r,
+                        pixel_color.g, pixel_color.b, pixel_color.a);
 
     auto& sprite = state.texture_sprite;
     SDL_Rect rect = sprite.rect();

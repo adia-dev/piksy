@@ -1,8 +1,7 @@
 #include <SDL_ttf.h>
 
-#include <iostream>
+#include <core/logger.hpp>
 #include <rendering/font.hpp>
-#include <stdexcept>
 
 namespace piksy {
 namespace rendering {
@@ -11,8 +10,7 @@ Font::Font(const std::string& font_path, int font_size) {
     _font.reset(TTF_OpenFont(font_path.c_str(), font_size));
 
     if (_font == nullptr) {
-        std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
-        throw std::runtime_error("Failed to load font. TTF_OpenFont()");
+        core::Logger::fatal("Failed to load font: %s", TTF_GetError());
     }
 }
 

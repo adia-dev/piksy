@@ -8,6 +8,21 @@
 namespace piksy {
 namespace core {
 
+enum class LogLevel {
+    Trace = 0,
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Fatal,
+};
+
+struct LoggerConfig {
+    LogLevel level = LogLevel::Debug;
+    std::string log_file = std::string(LOG_DIR) + "/piksy.log";
+    bool enable_colors = true;
+};
+
 struct WindowConfig {
     unsigned int width = 1440;
     unsigned int height = 900;
@@ -147,6 +162,7 @@ struct ImGuiConfig {
 struct Config {
     WindowConfig window_config;
     ImGuiConfig imgui_config;
+    LoggerConfig logger_config;
 
     Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER;
 };

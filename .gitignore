@@ -77,3 +77,5 @@ web/
 .cache/
 /compile_commands.json
 /bin/
+
+logs/

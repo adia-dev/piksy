@@ -1,6 +1,8 @@
 #include <iostream>
 #include <rendering/renderer.hpp>
 
+#include "core/logger.hpp"
+
 namespace piksy {
 namespace rendering {
 Renderer::~Renderer() { cleanup(); }
@@ -18,12 +20,12 @@ void Renderer::init(Window& window, core::WindowConfig& config) {
         throw std::runtime_error("Failed to set SDL Renderer blend mode.");
     }
 
-    std::cout << "Renderer initialized successfully\n";
+    core::Logger::debug("Renderer initialized successfully");
 }
 
 void Renderer::cleanup() {
     _renderer = nullptr;
-    std::cout << "Renderer cleaned up successfully\n";
+    core::Logger::debug("Renderer cleaned up successfully");
 }
 
 const SDL_Renderer* Renderer::get() const { return _renderer.get(); }

@@ -4,6 +4,8 @@
 #include <iostream>
 #include <managers/resource_manager.hpp>
 
+#include "core/logger.hpp"
+
 namespace fs = std::filesystem;
 
 namespace piksy {
@@ -73,7 +75,7 @@ bool Project::try_select_texture(const std::filesystem::path& file_path, core::S
             _renderer.mutable_get(), file_path.string()));
         return true;
     } catch (const std::runtime_error& ex) {
-        std::cerr << "Failed ot select a texture in the project: " << ex.what() << std::endl;
+        core::Logger::error("Failed to select a texture in the project: %s", ex.what());
         return false;
     }
 }

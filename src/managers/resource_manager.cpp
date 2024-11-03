@@ -1,7 +1,8 @@
 #include <filesystem>
-#include <iostream>
 #include <managers/resource_manager.hpp>
 #include <stdexcept>
+
+#include "core/logger.hpp"
 
 namespace fs = std::filesystem;
 
@@ -18,7 +19,7 @@ void ResourceManager::cleanup() {
     resource_manager._textures.clear();
     resource_manager._fonts.clear();
 
-    std::cout << "Resource manager cleaned up\n";
+    core::Logger::debug("Resource manager cleanup up successfully");
 }
 
 void ResourceManager::load_texture(SDL_Renderer *renderer, const std::string &texture_path) {
@@ -35,8 +36,7 @@ std::shared_ptr<rendering::Texture2D> ResourceManager::get_texture(
     }
 
     if (!fs::exists(texture_path)) {
-        throw std::runtime_error("Failed to get the texture: File not found, Path: " +
-                                 texture_path);
+        core::Logger::fatal("Failed to get the texture: File not found, Path: %s", texture_path.c_str());
     }
 
     resource_manager._textures.emplace(
@@ -58,7 +58,7 @@ std::shared_ptr<rendering::Font> ResourceManager::get_font(SDL_Renderer *rendere
     }
 
     if (!fs::exists(font_path)) {
-        throw std::runtime_error("Failed to get the font: File not found, Path: " + font_path);
+        core::Logger::fatal("Failed to get the font: File not found, Path: %s", font_path.c_str());
     }
 
     resource_manager._fonts.emplace(font_path, std::make_shared<rendering::Font>(font_path));
