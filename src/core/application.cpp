@@ -37,7 +37,8 @@ void Application::run() {
 void Application::shutdown() {
     auto &app = get();
     app._is_running = false;
-    app.cleanup();
+
+    std::cout << "Shutting down the application\n";
 }
 
 rendering::Renderer &Application::mutable_renderer() { return _renderer; }
@@ -168,26 +169,47 @@ void Application::render() {
 
     {
         static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar;
 
         ImGuiViewport *viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
+
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
         ImGui::SetNextWindowViewport(viewport->ID);
 
         window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
         ImGui::Begin("MainDockSpace", nullptr, window_flags);
-        ImGui::PopStyleVar(2);
+        ImGui::PopStyleVar();
+
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+                    // TODO: Handle opening a project
+                }
+                if (ImGui::MenuItem("Save", "Ctrl+S")) {
+                    // TODO: Handle saving the project
+                }
+                if (ImGui::MenuItem("Exit", "Alt+F4")) {
+                    shutdown();
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit")) {
+                // TODO: Add edit menu items here
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
 
         ImGuiIO &io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGuiID dockspace_id = ImGui::GetID("MainDockSpaceID");
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
 
@@ -198,15 +220,15 @@ void Application::render() {
     _inspectorComponent.render(_state);
     _projectComponent.render(_renderer, _state);
 
-    ImGui::ShowDemoWindow(&_show_demo_window);
+    // ImGui::ShowDemoWindow(&_show_demo_window);
 
     ImGui::Render();
-    // BUG: This is causing issues with SDL_WINDOW_ALLOW_HIGHDPI screen
     SDL_RenderSetScale(_renderer.mutable_get(), _io->DisplayFramebufferScale.x,
                        _io->DisplayFramebufferScale.y);
-    SDL_SetRenderDrawColor(_renderer.mutable_get(), (Uint8)(_clear_color.x * 255),
-                           (Uint8)(_clear_color.y * 255), (Uint8)(_clear_color.z * 255),
-                           (Uint8)(_clear_color.w * 255));
+    SDL_SetRenderDrawColor(_renderer.mutable_get(), static_cast<Uint8>(_clear_color.x * 255),
+                           static_cast<Uint8>(_clear_color.y * 255),
+                           static_cast<Uint8>(_clear_color.z * 255),
+                           static_cast<Uint8>(_clear_color.w * 255));
     SDL_RenderClear(_renderer.mutable_get());
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer.mutable_get());
     SDL_RenderPresent(_renderer.mutable_get());
