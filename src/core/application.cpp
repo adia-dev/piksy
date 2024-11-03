@@ -93,6 +93,10 @@ void Application::init_imgui() {
     _io->IniFilename = _config.imgui_config.ini_filename.c_str();
     printf("Loading layout from config file at: %s\n", _io->IniFilename);
 
+    /* _io->Fonts->Clear(); */
+    /* _io->Fonts->AddFontFromFileTTF(_config.imgui_config.font_filename.c_str(), 14.0f); */
+    /* _io->Fonts->Build(); */
+
     _config.imgui_config.config_style();
 }
 
