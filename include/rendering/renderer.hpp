@@ -2,10 +2,9 @@
 
 #include <SDL_render.h>
 
+#include <core/config.hpp>
 #include <memory>
-
-#include "core/config.hpp"
-#include "rendering/window.hpp"
+#include <rendering/window.hpp>
 
 namespace piksy {
 namespace rendering {

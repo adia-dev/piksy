@@ -4,18 +4,20 @@
 #include <SDL_pixels.h>
 #include <imgui.h>
 
+#include <components/ui_component.hpp>
 #include <core/state.hpp>
 #include <rendering/renderer.hpp>
 
 namespace piksy {
 namespace components {
 
-class Viewport {
+class Viewport : public UIComponent {
    public:
     explicit Viewport(rendering::Renderer& renderer);
     ~Viewport();
 
-    void render(core::State& state);
+    void update() override;
+    void render(core::State& state) override;
 
    private:
     void create_render_texture(int width, int height);

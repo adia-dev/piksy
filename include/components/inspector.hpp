@@ -1,12 +1,14 @@
 #pragma once
 
+#include <components/ui_component.hpp>
 #include <core/state.hpp>
 
 namespace piksy {
 namespace components {
-class Inspector {
+class Inspector : public UIComponent {
    public:
-    void render(core::State& state);
+    void update() override;
+    void render(core::State& state) override;
 
    private:
     void render_sprite_properties(core::State& state);

@@ -9,13 +9,15 @@ namespace fs = std::filesystem;
 namespace piksy {
 namespace components {
 
-void Project::render(rendering::Renderer& renderer, core::State& state) {
+void Project::update() {}
+
+void Project::render(core::State& state) {
     ImGui::Begin("Project");
-    render_file_browser(renderer, state);
+    render_file_browser(state);
     ImGui::End();
 }
 
-void Project::render_file_browser(rendering::Renderer& renderer, core::State& state) {
+void Project::render_file_browser(core::State& state) {
     static ImGuiTextFilter filter;
     filter.Draw("Filter");
 
@@ -47,7 +49,7 @@ void Project::render_file_browser(rendering::Renderer& renderer, core::State& st
             }
         } else if (entry.is_regular_file()) {
             if (ImGui::Selectable(filename.c_str())) {
-                if (!try_select_texture(renderer, path, state)) {
+                if (!try_select_texture(path, state)) {
                     ImGui::OpenPopup("Error Loading Texture");
                 }
             }
@@ -65,11 +67,10 @@ void Project::render_file_browser(rendering::Renderer& renderer, core::State& st
     }
 }
 
-bool Project::try_select_texture(rendering::Renderer& renderer,
-                                 const std::filesystem::path& file_path, core::State& state) {
+bool Project::try_select_texture(const std::filesystem::path& file_path, core::State& state) {
     try {
         state.texture_sprite.set_texture(managers::ResourceManager::get().get_texture(
-            renderer.mutable_get(), file_path.string()));
+            _renderer.mutable_get(), file_path.string()));
         return true;
     } catch (const std::runtime_error& ex) {
         std::cerr << "Failed ot select a texture in the project: " << ex.what() << std::endl;

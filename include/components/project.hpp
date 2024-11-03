@@ -1,20 +1,25 @@
 #pragma once
 
-#include <filesystem>
+#include <components/ui_component.hpp>
 #include <core/state.hpp>
+#include <filesystem>
 #include <rendering/renderer.hpp>
 
 namespace piksy {
 namespace components {
 
-class Project {
+class Project : public UIComponent {
    public:
-    void render(rendering::Renderer& renderer, core::State& state);
+    explicit Project(rendering::Renderer& renderer) : _renderer(renderer) {}
+
+    void update() override;
+    void render(core::State& state) override;
 
    private:
-    bool try_select_texture(rendering::Renderer& renderer, const std::filesystem::path& file_path,
-                            core::State& state);
-    void render_file_browser(rendering::Renderer& renderer, core::State& state);
+    bool try_select_texture(const std::filesystem::path& file_path, core::State& state);
+    void render_file_browser(core::State& state);
+
+    rendering::Renderer& _renderer;
 };
 
 }  // namespace components

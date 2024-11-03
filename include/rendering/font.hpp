@@ -1,8 +1,9 @@
 #pragma once
 
+#include <SDL_ttf.h>
+
 #include <memory>
 
-#include "SDL_ttf.h"
 namespace piksy {
 namespace rendering {
 class Font {

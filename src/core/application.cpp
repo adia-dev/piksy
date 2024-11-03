@@ -3,6 +3,8 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 
+#include <components/console.hpp>
+#include <components/inspector.hpp>
 #include <components/project.hpp>
 #include <core/application.hpp>
 #include <core/state.hpp>
@@ -118,7 +120,10 @@ void Application::init_state() {
 }
 
 void Application::init_components() {
-    _viewportComponent = std::make_unique<components::Viewport>(_renderer);
+    _ui_components[0] = std::make_unique<components::Viewport>(_renderer);
+    _ui_components[1] = std::make_unique<components::Console>();
+    _ui_components[2] = std::make_unique<components::Inspector>();
+    _ui_components[3] = std::make_unique<components::Project>(_renderer);
 }
 
 void Application::cleanup() {
@@ -164,7 +169,11 @@ void Application::handle_events() {
     }
 }
 
-void Application::update() {}
+void Application::update() {
+    for (auto &component : _ui_components) {
+        component->update();
+    }
+}
 
 void Application::render() {
     ImGui_ImplSDLRenderer2_NewFrame();
@@ -220,9 +229,9 @@ void Application::render() {
         ImGui::End();
     }
 
-    _viewportComponent->render(_state);
-    _inspectorComponent.render(_state);
-    _projectComponent.render(_renderer, _state);
+    for (auto &component : _ui_components) {
+        component->render(_state);
+    }
 
     // ImGui::ShowDemoWindow(&_show_demo_window);
 

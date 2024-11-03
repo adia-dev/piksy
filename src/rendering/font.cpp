@@ -1,8 +1,8 @@
+#include <SDL_ttf.h>
+
 #include <iostream>
 #include <rendering/font.hpp>
 #include <stdexcept>
-
-#include "SDL_ttf.h"
 
 namespace piksy {
 namespace rendering {

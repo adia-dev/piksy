@@ -1,9 +1,11 @@
-#include <components/inspector.hpp>
+#include <imgui.h>
 
-#include "imgui.h"
+#include <components/inspector.hpp>
 
 namespace piksy {
 namespace components {
+
+void Inspector::update() {}
 
 void Inspector::render(core::State& state) {
     ImGui::Begin("Inspector");

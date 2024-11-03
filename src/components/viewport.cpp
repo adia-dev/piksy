@@ -35,6 +35,11 @@ void Viewport::create_render_texture(int width, int height) {
     }
 }
 
+void Viewport::update() {
+    update_zoom();
+    update_pan();
+}
+
 void Viewport::render(core::State& state) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport", nullptr,
@@ -48,10 +53,6 @@ void Viewport::render(core::State& state) {
         create_render_texture(static_cast<int>(_viewport_size.x),
                               static_cast<int>(_viewport_size.y));
     }
-
-    // Update zoom and pan
-    update_zoom();
-    update_pan();
 
     SDL_SetRenderTarget(_renderer.mutable_get(), _render_texture);
 
@@ -73,7 +74,6 @@ void Viewport::render(core::State& state) {
 
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
-    // Handle mouse input
     handle_mouse_input(state);
 
     ImGui::End();

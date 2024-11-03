@@ -4,15 +4,15 @@
 #include <SDL2/SDL_ttf.h>
 #include <imgui.h>
 
+#include <array>
 #include <components/project.hpp>
+#include <components/ui_component.hpp>
 #include <components/viewport.hpp>
 #include <core/config.hpp>
 #include <core/state.hpp>
 #include <memory>
 #include <rendering/renderer.hpp>
 #include <rendering/window.hpp>
-
-#include "components/inspector.hpp"
 
 #if !SDL_VERSION_ATLEAST(2, 0, 17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
@@ -23,6 +23,7 @@ namespace core {
 
 class Application {
    public:
+    // NOTE: might have to remove this, this doesn't necessarily need to be a singleton
     static Application &get();
 
     void run();
@@ -45,25 +46,22 @@ class Application {
     Application(Application &&) = delete;
     Application(const Application &) = delete;
 
-    // TODO: Wrap these into RAII classes
     rendering::Window _window;
     rendering::Renderer _renderer;
 
     ImGuiIO *_io = nullptr;
 
-    Config _config;
-
+    // TODO: move this into the state
     bool _show_demo_window = true;
     bool _is_running = true;
     ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    std::unique_ptr<components::Viewport> _viewportComponent{nullptr};
+    Config _config;
     State _state;
 
-    // Components
-    components::Project _projectComponent;
-    components::Inspector _inspectorComponent;
+    std::array<std::unique_ptr<components::UIComponent>, 4> _ui_components;
 
+    // NOTE: too many init methods, code smell like sh*t
     void init();
     void init_sdl2();
     void init_imgui();
@@ -71,6 +69,7 @@ class Application {
     void init_fonts();
     void init_state();
     void init_components();
+
     void cleanup();
 
     void handle_events();
