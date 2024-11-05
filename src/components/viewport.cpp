@@ -7,7 +7,9 @@
 #include <core/state.hpp>
 #include <utils/dump.hpp>
 
+#include "SDL_error.h"
 #include "core/logger.hpp"
+#include "rendering/sprite.hpp"
 
 namespace piksy {
 namespace components {
@@ -100,6 +102,16 @@ void Viewport::render(core::State& state) {
         render_selection_rect();
     }
 
+    SDL_Rect mouse_rect{
+        static_cast<int>(_mouse_state.current_pos.x) - 10,
+        static_cast<int>(_mouse_state.current_pos.y) - 10,
+        150,
+        150,
+    };
+    SDL_SetRenderDrawColor(_renderer.get(), state.replacement_color[0], state.replacement_color[1],
+                           state.replacement_color[2], state.replacement_color[3]);
+    SDL_RenderFillRect(_renderer.get(), &mouse_rect);
+
     SDL_SetRenderTarget(_renderer.get(), nullptr);
 
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
@@ -120,10 +132,10 @@ void Viewport::notify_dropped_file(core::State& state, const std::string& droppe
 
 void Viewport::handle_mouse_input(core::State& state) {
     if (ImGui::IsItemHovered()) {
-        ImVec2 mousePos = ImGui::GetMousePos();
-        ImVec2 imagePos = ImGui::GetItemRectMin();
-        ImVec2 relativePos = {mousePos.x - imagePos.x, mousePos.y - imagePos.y};
-        _mouse_state.current_pos = relativePos;
+        ImVec2 mouse_pos = ImGui::GetMousePos();
+        ImVec2 image_pos = ImGui::GetItemRectMin();
+        ImVec2 relative_pos = {mouse_pos.x - image_pos.x, mouse_pos.y - image_pos.y};
+        _mouse_state.current_pos = relative_pos;
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             _mouse_state.start_pos = _mouse_state.current_pos;
@@ -151,11 +163,13 @@ void Viewport::process_zoom() {
 
 void Viewport::process_panning() {
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && _mouse_state.is_pressed) {
-        ImVec2 delta = {_mouse_state.current_pos.x - _mouse_state.start_pos.x,
-                        _mouse_state.current_pos.y - _mouse_state.start_pos.y};
+        ImVec2 delta = {
+            (_mouse_state.current_pos.x - _mouse_state.start_pos.x) / _zoom_state.current_scale,
+            (_mouse_state.current_pos.y - _mouse_state.start_pos.y) / _zoom_state.current_scale
+        };
 
-        _pan_state.target_offset.x += delta.x * _pan_state.pan_speed / _zoom_state.current_scale;
-        _pan_state.target_offset.y += delta.y * _pan_state.pan_speed / _zoom_state.current_scale;
+        _pan_state.target_offset.x += delta.x;
+        _pan_state.target_offset.y += delta.y;
 
         _mouse_state.start_pos = _mouse_state.current_pos;
         _mouse_state.is_panning = true;
@@ -189,42 +203,97 @@ void Viewport::render_selection_rect() {
 }
 
 void Viewport::handle_viewport_click(float x, float y, core::State& state) {
-    // Map screen coordinates to world coordinates
-    float world_x = (x - _pan_state.current_offset.x) / _zoom_state.current_scale;
-    float world_y = (y - _pan_state.current_offset.y) / _zoom_state.current_scale;
-
-    SDL_Color pixel_color = get_pixel_color(static_cast<int>(world_x), static_cast<int>(world_y));
-    core::Logger::debug("Clicked on a pixel of color (%u, %u, %u, %u)", pixel_color.r,
-                        pixel_color.g, pixel_color.b, pixel_color.a);
+    float world_x = (x / _zoom_state.current_scale) - _pan_state.current_offset.x;
+    float world_y = (y / _zoom_state.current_scale) - _pan_state.current_offset.y;
 
     auto& sprite = state.texture_sprite;
     SDL_Rect rect = sprite.rect();
-    if (world_x >= rect.x && world_x <= rect.x + rect.w && world_y >= rect.y &&
-        world_y <= rect.y + rect.h) {
+
+    float texture_x = world_x - rect.x;
+    float texture_y = world_y - rect.y;
+
+    if (texture_x >= 0 && texture_x < rect.w && texture_y >= 0 && texture_y < rect.h) {
         sprite.set_selected(true);
+
+        SDL_Color pixel_color = get_texture_pixel_color(static_cast<int>(texture_x),
+                                                        static_cast<int>(texture_y), sprite);
+
+        swap_texture_color(pixel_color,
+                           SDL_Color{
+                               static_cast<Uint8>(state.replacement_color[0] * 255),
+                               static_cast<Uint8>(state.replacement_color[1] * 255),
+                               static_cast<Uint8>(state.replacement_color[2] * 255),
+                               static_cast<Uint8>(state.replacement_color[3] * 255),
+                           },
+                           state);
     } else {
         sprite.set_selected(false);
     }
 }
 
-SDL_Color Viewport::get_pixel_color(int x, int y) {
-    SDL_Rect pixel_rect{static_cast<int>(x), static_cast<int>(y), 1, 1};
-    Uint32 pixel;
-    SDL_Color pixel_color = SDL_Color{0, 0, 0, 0};
+void Viewport::swap_texture_color(const SDL_Color& from, const SDL_Color& to, core::State& state) {
+    auto texture = state.texture_sprite.texture();
+    void* pixels;
+    int pitch;
 
-    SDL_SetRenderTarget(_renderer.get(), _render_texture);
-    if (SDL_RenderReadPixels(_renderer.get(), &pixel_rect, SDL_PIXELFORMAT_RGBA8888, &pixel,
-                             sizeof(pixel)) < 0) {
-        SDL_Log("SDL_RenderReadPixels failed: %s", SDL_GetError());
-        return pixel_color;
+    if (SDL_LockTexture(state.texture_sprite.texture()->get(), nullptr, &pixels, &pitch) < 0) {
+        core::Logger::error("Failed to lock the texture to remove the background: %s",
+                            SDL_GetError());
+        return;
     }
 
-    SDL_GetRGBA(pixel, SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888), &pixel_color.r, &pixel_color.g,
-                &pixel_color.b, &pixel_color.a);
+    Uint32 format;
+    SDL_QueryTexture(texture->get(), &format, nullptr, nullptr, nullptr);
+    SDL_PixelFormat* pixel_format = SDL_AllocFormat(format);
+    Uint32* pixel_data = static_cast<Uint32*>(pixels);
 
-    SDL_SetRenderTarget(_renderer.get(), nullptr);
+    Uint32 to_u32 = SDL_MapRGBA(pixel_format, to.r, to.g, to.b, to.a);
+    int num_replaced = 0;
+    for (int y = 0; y < texture->height(); ++y) {
+        for (int x = 0; x < texture->width(); ++x) {
+            Uint32* current_pixel = pixel_data + y * (pitch / 4) + x;
+            Uint8 pr, pg, pb, pa;
+            SDL_GetRGBA(*current_pixel, pixel_format, &pr, &pg, &pb, &pa);
+            if (pr == from.r && pg == from.g && pb == from.b && pa == from.a) {
+                *current_pixel = to_u32;
+                ++num_replaced;
+            }
+        }
+    }
 
-    return pixel_color;
+    core::Logger::debug("Number of pixels replaced: %d", num_replaced);
+    core::Logger::info("Replaced the color (%d, %d, %d, %d) with the color (%d, %d, %d, %d)",
+                       from.r, from.g, from.b, from.a, to.r, to.g, to.b, to.a);
+
+    SDL_UnlockTexture(state.texture_sprite.texture()->get());
+    SDL_FreeFormat(pixel_format);
+}
+
+SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite) {
+    SDL_Texture* texture = sprite.texture()->get();
+    void* pixels = nullptr;
+    int pitch = 0;
+
+    if (SDL_LockTexture(texture, nullptr, &pixels, &pitch) != 0) {
+        core::Logger::error("Failed to lock texture: %s", SDL_GetError());
+        return SDL_Color{0, 0, 0, 0};
+    }
+
+    Uint32 format;
+    SDL_QueryTexture(texture, &format, nullptr, nullptr, nullptr);
+    SDL_PixelFormat* pixel_format = SDL_AllocFormat(format);
+
+    Uint8* pixel_ptr =
+        static_cast<Uint8*>(pixels) + y * pitch + x * 4;  // Assuming 4 bytes per pixel
+    Uint32 pixel_value = *(reinterpret_cast<Uint32*>(pixel_ptr));
+
+    SDL_Color color;
+    SDL_GetRGBA(pixel_value, pixel_format, &color.r, &color.g, &color.b, &color.a);
+
+    SDL_UnlockTexture(texture);
+    SDL_FreeFormat(pixel_format);
+
+    return color;
 }
 
 void Viewport::render_grid_background() {

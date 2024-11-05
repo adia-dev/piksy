@@ -6,13 +6,12 @@
 #include <components/console.hpp>
 #include <components/inspector.hpp>
 #include <components/project.hpp>
+#include <components/viewport.hpp>
 #include <core/application.hpp>
+#include <core/logger.hpp>
 #include <core/state.hpp>
 #include <managers/resource_manager.hpp>
 #include <memory>
-
-#include "components/viewport.hpp"
-#include "core/logger.hpp"
 
 namespace piksy {
 namespace core {

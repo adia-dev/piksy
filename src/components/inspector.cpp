@@ -9,6 +9,7 @@ void Inspector::update() {}
 
 void Inspector::render(core::State& state) {
     ImGui::Begin("Inspector");
+    ImGui::ColorEdit4("Replacement Color", state.replacement_color);
     render_sprite_properties(state);
     ImGui::End();
 }

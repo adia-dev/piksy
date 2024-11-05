@@ -30,13 +30,14 @@ class Viewport : public UIComponent {
     void render_selection_rect();
     void render_grid_background();
 
-    SDL_Color get_pixel_color(int x, int y);
+    SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
 
     void process_zoom();
     void process_panning();
     void update_zoom();
     void update_pan();
     void handle_mouse_input(core::State& state);
+    void swap_texture_color(const SDL_Color& from, const SDL_Color& to, core::State& state);
 
     // State structures
     struct MouseState {
