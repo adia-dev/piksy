@@ -10,6 +10,7 @@
 #include <iostream>
 #include <mutex>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 namespace piksy::core {
@@ -60,8 +61,20 @@ class Logger {
 
     template <typename... Args>
     static void fatal(const std::string& format_str, Args&&... args) {
-        get().log(LogLevel::Fatal, format_str, std::forward<Args>(args)...);
-        throw std::runtime_error("Fatal error occurred");
+        std::string message =
+            get().format_exception_message(format_str, std::forward<Args>(args)...);
+        get().log(LogLevel::Fatal, message);  // Log the fatal message
+
+        throw std::runtime_error(message);  // Throw the fatal exception with the message
+    }
+
+    template <typename... Args>
+    static void fatal(const std::exception& ex, const std::string& format_str, Args&&... args) {
+        std::string message =
+            get().format_exception_message(format_str, std::forward<Args>(args)...);
+        get().log(LogLevel::Fatal, message + ": " + ex.what());  // Log with exception details
+
+        throw std::runtime_error(message);  // Rethrow or wrap as needed
     }
 
    private:
@@ -164,6 +177,20 @@ class Logger {
             default:
                 return "";
         }
+    }
+
+    template <typename... Args>
+    std::string format_exception_message(const std::string& format_str, Args&&... args) {
+        std::string message;
+        if constexpr (sizeof...(args) > 0) {
+            constexpr size_t BUFFER_SIZE = 1024;
+            char buffer[BUFFER_SIZE];
+            int ret = std::snprintf(buffer, BUFFER_SIZE, format_str.c_str(), args...);
+            message = (ret >= 0 && static_cast<size_t>(ret) < BUFFER_SIZE) ? buffer : format_str;
+        } else {
+            message = format_str;
+        }
+        return message;
     }
 
     LoggerConfig* _config = nullptr;

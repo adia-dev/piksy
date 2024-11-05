@@ -114,7 +114,7 @@ void Application::init_components() {
     _ui_components.emplace("Viewport",
                            std::make_unique<components::Viewport>(_renderer, _resource_manager));
     _ui_components.emplace("Console", std::make_unique<components::Console>());
-    _ui_components.emplace("Inspector", std::make_unique<components::Inspector>());
+    _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_renderer));
     _ui_components.emplace("Project", std::make_unique<components::Project>(_resource_manager));
 }
 

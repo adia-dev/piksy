@@ -31,7 +31,7 @@ std::shared_ptr<rendering::Texture2D> ResourceManager::get_texture(
     }
 
     if (!fs::exists(texture_path)) {
-        core::Logger::fatal("Failed to get the texture: File not found, Path: %s",
+        core::Logger::error("Failed to get the texture: File not found, Path: %s",
                             texture_path.c_str());
     }
 
@@ -50,7 +50,7 @@ std::shared_ptr<rendering::Font> ResourceManager::get_font(const std::string &fo
     }
 
     if (!fs::exists(font_path)) {
-        core::Logger::fatal("Failed to get the font: File not found, Path: %s", font_path.c_str());
+        core::Logger::error("Failed to get the font: File not found, Path: %s", font_path.c_str());
     }
 
     core::Logger::debug("Loading font: %s", font_path.c_str());

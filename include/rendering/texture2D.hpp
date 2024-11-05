@@ -15,7 +15,9 @@ class Texture2D {
     SDL_Texture *get() const;
     int width() const;
     int height() const;
+    const std::string &path() const;
 
+    void set_path(const std::string &path);
     void reload(SDL_Renderer *renderer);
 
    private:
@@ -26,7 +28,7 @@ class Texture2D {
     int _width, _height, _pitch;
 
     // NOTE: Do I actually need this ?
-    std::string _texture_path;
+    std::string _path;
 
     void load(SDL_Renderer *renderer);
 };

@@ -165,8 +165,7 @@ void Viewport::process_panning() {
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && _mouse_state.is_pressed) {
         ImVec2 delta = {
             (_mouse_state.current_pos.x - _mouse_state.start_pos.x) / _zoom_state.current_scale,
-            (_mouse_state.current_pos.y - _mouse_state.start_pos.y) / _zoom_state.current_scale
-        };
+            (_mouse_state.current_pos.y - _mouse_state.start_pos.y) / _zoom_state.current_scale};
 
         _pan_state.target_offset.x += delta.x;
         _pan_state.target_offset.y += delta.y;
@@ -218,14 +217,16 @@ void Viewport::handle_viewport_click(float x, float y, core::State& state) {
         SDL_Color pixel_color = get_texture_pixel_color(static_cast<int>(texture_x),
                                                         static_cast<int>(texture_y), sprite);
 
-        swap_texture_color(pixel_color,
-                           SDL_Color{
-                               static_cast<Uint8>(state.replacement_color[0] * 255),
-                               static_cast<Uint8>(state.replacement_color[1] * 255),
-                               static_cast<Uint8>(state.replacement_color[2] * 255),
-                               static_cast<Uint8>(state.replacement_color[3] * 255),
-                           },
-                           state);
+        if (!_mouse_state.is_panning) {
+            swap_texture_color(pixel_color,
+                               SDL_Color{
+                                   static_cast<Uint8>(state.replacement_color[0] * 255),
+                                   static_cast<Uint8>(state.replacement_color[1] * 255),
+                                   static_cast<Uint8>(state.replacement_color[2] * 255),
+                                   static_cast<Uint8>(state.replacement_color[3] * 255),
+                               },
+                               state);
+        }
     } else {
         sprite.set_selected(false);
     }

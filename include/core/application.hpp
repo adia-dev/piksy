@@ -4,7 +4,6 @@
 #include <SDL2/SDL_ttf.h>
 #include <imgui.h>
 
-#include <array>
 #include <components/project.hpp>
 #include <components/ui_component.hpp>
 #include <components/viewport.hpp>

@@ -10,7 +10,7 @@ Font::Font(const std::string& font_path, int font_size) {
     _font.reset(TTF_OpenFont(font_path.c_str(), font_size));
 
     if (_font == nullptr) {
-        core::Logger::fatal("Failed to load font: %s", TTF_GetError());
+        core::Logger::error("Failed to load font: %s", TTF_GetError());
     }
 }
 
