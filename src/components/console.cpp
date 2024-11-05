@@ -1,4 +1,5 @@
 #include <components/console.hpp>
+#include <core/config.hpp>
 
 namespace piksy {
 namespace components {
@@ -93,30 +94,7 @@ void Console::render(core::State& state) {
         }
 
         // Color coding based on log level
-        ImVec4 color;
-        switch (level) {
-            case core::LogLevel::Trace:
-                color = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);  // Dark Gray
-                break;
-            case core::LogLevel::Debug:
-                color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);  // Gray
-                break;
-            case core::LogLevel::Info:
-                color = ImVec4(0.6f, 0.8f, 1.0f, 1.0f);  // Light Blue
-                break;
-            case core::LogLevel::Warn:
-                color = ImVec4(1.0f, 1.0f, 0.4f, 1.0f);  // Yellow
-                break;
-            case core::LogLevel::Error:
-                color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);  // Red
-                break;
-            case core::LogLevel::Fatal:
-                color = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);  // Dark Red
-                break;
-            default:
-                color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);  // White
-                break;
-        }
+        ImVec4 color = core::LogLevelToColor(level);
 
         ImGui::PushStyleColor(ImGuiCol_Text, color);
         ImGui::TextUnformatted(message.c_str());

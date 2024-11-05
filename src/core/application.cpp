@@ -14,6 +14,8 @@
 #include <managers/resource_manager.hpp>
 #include <memory>
 
+#include "core/config.hpp"
+
 namespace piksy {
 namespace core {
 
@@ -246,11 +248,26 @@ void Application::render() {
                     // TODO: Add tools menu items here
                     ImGui::EndMenu();
                 }
+                if (ImGui::BeginMenu("Help")) {
+                    // TODO: Add tools menu items here
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("About Piksy")) {
+                    if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+                        // TODO: Handle opening a project
+                    }
+                    ImGui::EndMenu();
+                }
                 ImGui::EndMenuBar();
             }
             ImGui::End();
         }
 
+        ImVec4 color = Logger::get().messages().empty()
+                           ? ImVec4(0.0f, 0.0f, 0.0f, 255.0f)
+                           : LogLevelToColor(Logger::get().messages().back().first);
+        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, color);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 255));
         if (ImGui::BeginViewportSideBar("##MainStatusBar", viewport, ImGuiDir_Down, height,
                                         window_flags)) {
             if (ImGui::BeginMenuBar()) {
@@ -262,6 +279,7 @@ void Application::render() {
             }
             ImGui::End();
         }
+        ImGui::PopStyleColor(2);
     }
 
     // ImGui::ShowDemoWindow(&_show_demo_window);

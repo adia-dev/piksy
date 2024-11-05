@@ -42,12 +42,12 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries, cor
             ImGui::SameLine();
 
             if (entry.is_open) {
-                ImGui::TextColored({0.49f, 1.0f, 0.83f, 1.0f}, "> %s/", name.c_str());
+                ImGui::TextColored({0.49f, 1.0f, 0.83f, 1.0f}, "v %s/", name.c_str());
                 ImGui::Indent();
                 render_directory_entries(entry.children, state);
                 ImGui::Unindent();
             } else {
-                ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "v %s/", name.c_str());
+                ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "> %s/", name.c_str());
             }
         } else {
             if (ImGui::Selectable(("##" + entry.path.string()).c_str(), false,

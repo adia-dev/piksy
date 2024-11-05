@@ -17,6 +17,32 @@ enum class LogLevel {
     Fatal,
 };
 
+static ImVec4 LogLevelToColor(LogLevel level) {
+    switch (level) {
+        case core::LogLevel::Trace:
+            return ImVec4(0.5f, 0.5f, 0.5f, 1.0f);  // Dark Gray
+            break;
+        case core::LogLevel::Debug:
+            return ImVec4(0.6f, 0.6f, 0.6f, 1.0f);  // Gray
+            break;
+        case core::LogLevel::Info:
+            return ImVec4(0.6f, 0.8f, 1.0f, 1.0f);  // Light Blue
+            break;
+        case core::LogLevel::Warn:
+            return ImVec4(1.0f, 1.0f, 0.4f, 1.0f);  // Yellow
+            break;
+        case core::LogLevel::Error:
+            return ImVec4(1.0f, 0.4f, 0.4f, 1.0f);  // Red
+            break;
+        case core::LogLevel::Fatal:
+            return ImVec4(1.0f, 0.1f, 0.1f, 1.0f);  // Dark Red
+            break;
+        default:
+            return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);  // White
+            break;
+    }
+}
+
 struct LoggerConfig {
     LogLevel level = LogLevel::Debug;
     std::string log_file = std::string(LOG_DIR) + "/piksy.log";
