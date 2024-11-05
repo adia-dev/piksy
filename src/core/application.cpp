@@ -13,6 +13,8 @@
 #include <managers/resource_manager.hpp>
 #include <memory>
 
+#include "imgui_internal.h"
+
 namespace piksy {
 namespace core {
 
@@ -202,26 +204,6 @@ void Application::render() {
         ImGui::Begin("MainDockSpace", nullptr, window_flags);
         ImGui::PopStyleVar();
 
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-                    // TODO: Handle opening a project
-                }
-                if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                    // TODO: Handle saving the project
-                }
-                if (ImGui::MenuItem("Exit", "Alt+F4")) {
-                    shutdown();
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Edit")) {
-                // TODO: Add edit menu items here
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
-        }
-
         ImGuiIO &io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
             ImGuiID dockspace_id = ImGui::GetID("MainDockSpaceID");
@@ -233,6 +215,53 @@ void Application::render() {
 
     for (auto &[name, component] : _ui_components) {
         component->render(_state);
+    }
+
+    {
+        ImGuiViewportP *viewport = (ImGuiViewportP *)(void *)ImGui::GetMainViewport();
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar |
+                                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
+        float height = ImGui::GetFrameHeight();
+
+        if (ImGui::BeginViewportSideBar("##SecondaryMenuBar", viewport, ImGuiDir_Up, height,
+                                        window_flags)) {
+            if (ImGui::BeginMenuBar()) {
+                if (ImGui::BeginMenu("File")) {
+                    if (ImGui::MenuItem("Open...", "Ctrl+O")) {
+                        // TODO: Handle opening a project
+                    }
+                    if (ImGui::MenuItem("Save", "Ctrl+S")) {
+                        // TODO: Handle saving the project
+                    }
+                    if (ImGui::MenuItem("Exit", "Alt+F4")) {
+                        shutdown();
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Edit")) {
+                    // TODO: Add edit menu items here
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Tools")) {
+                    // TODO: Add tools menu items here
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenuBar();
+            }
+            ImGui::End();
+        }
+
+        if (ImGui::BeginViewportSideBar("##MainStatusBar", viewport, ImGuiDir_Down, height,
+                                        window_flags)) {
+            if (ImGui::BeginMenuBar()) {
+                if (!Logger::get().messages().empty()) {
+                    auto &[level, message] = Logger::get().messages().back();
+                    ImGui::Text("%s", message.c_str());
+                }
+                ImGui::EndMenuBar();
+            }
+            ImGui::End();
+        }
     }
 
     // ImGui::ShowDemoWindow(&_show_demo_window);
