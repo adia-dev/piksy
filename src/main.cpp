@@ -1,5 +1,6 @@
 #include <core/application.hpp>
 #include <core/logger.hpp>
+#include <exception>
 
 int main() {
     try {
@@ -9,8 +10,9 @@ int main() {
         piksy::core::Logger::fatal("Application exited with a runtime exception:\nException: %s",
                                    ex.what());
         return -1;
-    } catch (...) {
-        piksy::core::Logger::fatal("Application exited with an unknown exception.");
+    } catch (const std::exception& ex) {
+        piksy::core::Logger::fatal("Application exited with an exception: %s", ex.what());
+
         return -1;
     }
 }

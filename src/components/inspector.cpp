@@ -29,6 +29,14 @@ void Inspector::render(core::State& state) {
     help_marker("This color is used to replace specific colors in the texture.");
     ImGui::ColorEdit4("##Replacement Color", state.replacement_color);
 
+    // Divider for viewport controls
+    ImGui::Separator();
+
+    ImGui::Text("Viewport");
+    // TODO: rewrite this help marker
+    help_marker("This color is used to replace specific colors in the texture.");
+    ImGui::SliderInt("##Viewport Grid Cell Size", &state.viewport_grid_cell_size, 0, 1000);
+
     // Divider
     ImGui::Separator();
 

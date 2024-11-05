@@ -2,8 +2,7 @@
 
 #include <components/ui_component.hpp>
 #include <core/state.hpp>
-
-#include "rendering/renderer.hpp"
+#include <rendering/renderer.hpp>
 
 namespace piksy {
 namespace components {

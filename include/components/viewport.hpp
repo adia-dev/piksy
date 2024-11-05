@@ -28,7 +28,7 @@ class Viewport : public UIComponent {
     void render_placeholder_text();
 
     void render_selection_rect();
-    void render_grid_background();
+    void render_grid_background(core::State& state);
 
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
 
@@ -65,7 +65,6 @@ class Viewport : public UIComponent {
 
     ImVec2 _viewport_size;
     SDL_Rect _selection_rect;
-    int _grid_cell_size = 20;
 
     MouseState _mouse_state;
     ZoomState _zoom_state;

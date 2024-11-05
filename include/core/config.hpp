@@ -17,7 +17,7 @@ enum class LogLevel {
     Fatal,
 };
 
-static ImVec4 LogLevelToColor(LogLevel level) {
+inline static ImVec4 LogLevelToColor(LogLevel level) {
     switch (level) {
         case core::LogLevel::Trace:
             return ImVec4(0.5f, 0.5f, 0.5f, 1.0f);  // Dark Gray

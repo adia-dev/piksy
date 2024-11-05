@@ -1,15 +1,14 @@
+#include <SDL_error.h>
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
 #include <SDL_ttf.h>
 #include <imgui.h>
 
 #include <components/viewport.hpp>
+#include <core/logger.hpp>
 #include <core/state.hpp>
+#include <rendering/sprite.hpp>
 #include <utils/dump.hpp>
-
-#include "SDL_error.h"
-#include "core/logger.hpp"
-#include "rendering/sprite.hpp"
 
 namespace piksy {
 namespace components {
@@ -67,8 +66,6 @@ void Viewport::render(core::State& state) {
     SDL_SetRenderDrawColor(_renderer.get(), 0, 0, 0, 255);
     SDL_RenderClear(_renderer.get());
 
-    render_grid_background();
-
     if (state.texture_sprite.texture() != nullptr) {
         state.texture_sprite.render(_renderer.get(), _zoom_state.current_scale,
                                     _pan_state.current_offset.x, _pan_state.current_offset.y);
@@ -97,6 +94,8 @@ void Viewport::render(core::State& state) {
             }
         }
     }
+
+    render_grid_background(state);
 
     if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
         render_selection_rect();
@@ -217,7 +216,7 @@ void Viewport::handle_viewport_click(float x, float y, core::State& state) {
         SDL_Color pixel_color = get_texture_pixel_color(static_cast<int>(texture_x),
                                                         static_cast<int>(texture_y), sprite);
 
-        if (!_mouse_state.is_panning) {
+        if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) && !_mouse_state.is_panning) {
             swap_texture_color(pixel_color,
                                SDL_Color{
                                    static_cast<Uint8>(state.replacement_color[0] * 255),
@@ -297,15 +296,16 @@ SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprit
     return color;
 }
 
-void Viewport::render_grid_background() {
+void Viewport::render_grid_background(core::State& state) {
     SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
 
-    float scaled_grid_cell_size = std::max(_grid_cell_size * _zoom_state.current_scale, 1.0f);
+    float scaled_grid_cell_size =
+        std::max(state.viewport_grid_cell_size * _zoom_state.current_scale, 1.0f);
 
-    float start_x =
-        fmod(-_pan_state.current_offset.x * _zoom_state.current_scale, scaled_grid_cell_size);
-    float start_y =
-        fmod(-_pan_state.current_offset.y * _zoom_state.current_scale, scaled_grid_cell_size);
+    float offset_x =
+        fmod(_pan_state.current_offset.x * _zoom_state.current_scale, scaled_grid_cell_size);
+    float offset_y =
+        fmod(_pan_state.current_offset.y * _zoom_state.current_scale, scaled_grid_cell_size);
 
     int num_vertical_lines =
         static_cast<int>(std::ceil(_viewport_size.x / scaled_grid_cell_size)) + 1;
@@ -313,7 +313,7 @@ void Viewport::render_grid_background() {
         static_cast<int>(std::ceil(_viewport_size.y / scaled_grid_cell_size)) + 1;
 
     for (int i = 0; i < num_vertical_lines; ++i) {
-        float x = start_x + i * scaled_grid_cell_size;
+        float x = offset_x + i * scaled_grid_cell_size;
         if (x >= 0 && x <= _viewport_size.x) {
             SDL_RenderDrawLine(_renderer.get(), static_cast<int>(x), 0, static_cast<int>(x),
                                static_cast<int>(_viewport_size.y));
@@ -321,7 +321,7 @@ void Viewport::render_grid_background() {
     }
 
     for (int j = 0; j < num_horizontal_lines; ++j) {
-        float y = start_y + j * scaled_grid_cell_size;
+        float y = offset_y + j * scaled_grid_cell_size;
         if (y >= 0 && y <= _viewport_size.y) {
             SDL_RenderDrawLine(_renderer.get(), 0, static_cast<int>(y),
                                static_cast<int>(_viewport_size.x), static_cast<int>(y));
@@ -329,7 +329,6 @@ void Viewport::render_grid_background() {
     }
 }
 
-// Lerp utility function
 ImVec2 Viewport::lerp(const ImVec2& lhs, const ImVec2& rhs, float t) {
     return {lhs.x + t * (rhs.x - lhs.x), lhs.y + t * (rhs.y - lhs.y)};
 }
