@@ -2,6 +2,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
+#include <imgui_internal.h>
 
 #include <components/console.hpp>
 #include <components/inspector.hpp>
@@ -12,8 +13,6 @@
 #include <core/state.hpp>
 #include <managers/resource_manager.hpp>
 #include <memory>
-
-#include "imgui_internal.h"
 
 namespace piksy {
 namespace core {
@@ -117,7 +116,8 @@ void Application::init_components() {
                            std::make_unique<components::Viewport>(_renderer, _resource_manager));
     _ui_components.emplace("Console", std::make_unique<components::Console>());
     _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_renderer));
-    _ui_components.emplace("Project", std::make_unique<components::Project>(_resource_manager));
+    _ui_components.emplace("Project",
+                           std::make_unique<components::Project>(_resource_manager, _state));
 }
 
 void Application::cleanup() {

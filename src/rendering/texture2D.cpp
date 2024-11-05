@@ -5,6 +5,7 @@
 #include <core/logger.hpp>
 #include <filesystem>
 #include <rendering/texture2D.hpp>
+#include <stdexcept>
 
 namespace fs = std::filesystem;
 
@@ -28,16 +29,20 @@ void Texture2D::reload(SDL_Renderer* renderer) { load(renderer); }
 void Texture2D::load(SDL_Renderer* renderer) {
     if (renderer == nullptr) {
         core::Logger::error("Failed to load the texture, the renderer is null");
+        throw std::runtime_error("Failed to load the texture, the renderer is null");
     }
 
     if (!fs::exists(_path)) {
         core::Logger::error("Failed to load the texture, file does not exist");
+        throw std::runtime_error("Failed to load the texture, file does not exist");
     }
 
     SDL_Surface* surface = IMG_Load(_path.c_str());
     if (surface == nullptr) {
         core::Logger::error("Failed to load the image %s into a surface: %s", _path.c_str(),
                             IMG_GetError());
+        throw std::runtime_error(std::string("Failed to load the image into a surface: ") +
+                                 IMG_GetError());
     }
 
     SDL_Surface* converted_surface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
@@ -57,12 +62,15 @@ void Texture2D::load(SDL_Renderer* renderer) {
     SDL_SetTextureBlendMode(_texture.get(), SDL_BLENDMODE_BLEND);
     if (_texture == nullptr) {
         core::Logger::error("Failed to create a texture from a surface: %s", SDL_GetError());
+        throw std::runtime_error(std::string("Failed to create a texture from a surface: %s") +
+                                 SDL_GetError());
     }
 
     void* pixels;
     int pitch;
     if (SDL_LockTexture(_texture.get(), nullptr, &pixels, &pitch) != 0) {
         core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
+        throw std::runtime_error(std::string("Failed to lock the texture: %s") + SDL_GetError());
     }
 
     Uint8* dst = static_cast<Uint8*>(pixels);

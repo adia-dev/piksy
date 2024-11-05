@@ -1,6 +1,7 @@
 #include <core/logger.hpp>
 #include <filesystem>
 #include <managers/resource_manager.hpp>
+#include <stdexcept>
 
 namespace fs = std::filesystem;
 
@@ -33,6 +34,7 @@ std::shared_ptr<rendering::Texture2D> ResourceManager::get_texture(
     if (!fs::exists(texture_path)) {
         core::Logger::error("Failed to get the texture: File not found, Path: %s",
                             texture_path.c_str());
+        throw std::runtime_error("Failed to get the texture: File not found at: " + texture_path);
     }
 
     core::Logger::debug("Loading texture: %s", texture_path.c_str());
@@ -51,6 +53,7 @@ std::shared_ptr<rendering::Font> ResourceManager::get_font(const std::string &fo
 
     if (!fs::exists(font_path)) {
         core::Logger::error("Failed to get the font: File not found, Path: %s", font_path.c_str());
+        throw std::runtime_error("Failed to get the font: File not found at: " + font_path);
     }
 
     core::Logger::debug("Loading font: %s", font_path.c_str());
