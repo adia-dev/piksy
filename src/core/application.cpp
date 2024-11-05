@@ -14,6 +14,7 @@
 #include <managers/resource_manager.hpp>
 #include <memory>
 
+#include "components/animation_preview.hpp"
 #include "core/config.hpp"
 
 namespace piksy {
@@ -120,6 +121,7 @@ void Application::init_components() {
     _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_renderer));
     _ui_components.emplace("Project",
                            std::make_unique<components::Project>(_resource_manager, _state));
+    _ui_components.emplace("Animation Preview", std::make_unique<components::AnimationPreview>());
 }
 
 void Application::cleanup() {
