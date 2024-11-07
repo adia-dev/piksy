@@ -9,7 +9,7 @@ namespace components {
 class Inspector : public UIComponent {
    public:
     explicit Inspector(rendering::Renderer& renderer);
-    void update() override;
+    void update(core::State& state) override;
     void render(core::State& state) override;
 
    private:

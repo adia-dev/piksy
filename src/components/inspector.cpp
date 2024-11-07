@@ -10,7 +10,7 @@
 namespace piksy {
 namespace components {
 
-void Inspector::update() {}
+void Inspector::update(core::State& state) {}
 
 void Inspector::render(core::State& state) {
     ImGui::Begin("Inspector");

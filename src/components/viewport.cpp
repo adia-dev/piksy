@@ -1,4 +1,5 @@
 #include <SDL_error.h>
+#include <SDL_rect.h>
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
 #include <SDL_ttf.h>
@@ -7,8 +8,12 @@
 #include <components/viewport.hpp>
 #include <core/logger.hpp>
 #include <core/state.hpp>
+#include <exception>
+#include <opencv2/opencv.hpp>
 #include <rendering/sprite.hpp>
 #include <utils/dump.hpp>
+
+#include "utils/maths.hpp"
 
 namespace piksy {
 namespace components {
@@ -42,7 +47,7 @@ void Viewport::create_render_texture(int width, int height) {
     }
 }
 
-void Viewport::update() {
+void Viewport::update(core::State& state) {
     update_zoom();
     update_pan();
 }
@@ -74,14 +79,13 @@ void Viewport::render(core::State& state) {
                                                "/fonts/PixelifySans-Regular.ttf");
         if (font != nullptr) {
             const char* placeholder_text = "No texture loaded. Please insert a texture.";
-            SDL_Color text_color = {255, 255, 255, 255};  // White color
+            SDL_Color text_color{255, 255, 255, 255};
             SDL_Surface* text_surface =
                 TTF_RenderText_Blended(font.get()->get(), placeholder_text, text_color);
             if (text_surface != nullptr) {
                 SDL_Texture* text_texture =
                     SDL_CreateTextureFromSurface(_renderer.get(), text_surface);
                 if (text_texture != nullptr) {
-                    // Calculate the position to center the text
                     int text_width = text_surface->w;
                     int text_height = text_surface->h;
                     SDL_Rect dest_rect = {static_cast<int>((_viewport_size.x - text_width) / 2),
@@ -98,8 +102,10 @@ void Viewport::render(core::State& state) {
     render_grid_background(state);
 
     if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
-        render_selection_rect();
+        render_selection_rect(state);
     }
+
+    render_frames(state.frames);
 
     SDL_Rect mouse_rect{
         static_cast<int>(_mouse_state.current_pos.x) - 10,
@@ -177,14 +183,16 @@ void Viewport::process_panning() {
 }
 
 void Viewport::update_zoom() {
-    _zoom_state.current_scale = lerp(_zoom_state.current_scale, _zoom_state.target_scale, 0.1f);
+    _zoom_state.current_scale =
+        utils::maths::lerp(_zoom_state.current_scale, _zoom_state.target_scale, 0.1f);
 }
 
 void Viewport::update_pan() {
-    _pan_state.current_offset = lerp(_pan_state.current_offset, _pan_state.target_offset, 0.1f);
+    _pan_state.current_offset =
+        utils::maths::lerp(_pan_state.current_offset, _pan_state.target_offset, 0.1f);
 }
 
-void Viewport::render_selection_rect() {
+void Viewport::render_selection_rect(core::State& state) {
     int start_x = static_cast<int>(_mouse_state.start_pos.x);
     int start_y = static_cast<int>(_mouse_state.start_pos.y);
     int current_x = static_cast<int>(_mouse_state.current_pos.x);
@@ -195,9 +203,74 @@ void Viewport::render_selection_rect() {
 
     SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 255);
     SDL_RenderDrawRect(_renderer.get(), &_selection_rect);
-
     SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 25);
     SDL_RenderFillRect(_renderer.get(), &_selection_rect);
+
+    if (state.texture_sprite.texture() != nullptr) {
+        SDL_Rect texture_rect = state.texture_sprite.rect();
+
+        SDL_Rect selection_world_rect;
+        selection_world_rect.x =
+            (_selection_rect.x / _zoom_state.current_scale) - _pan_state.current_offset.x;
+        selection_world_rect.y =
+            (_selection_rect.y / _zoom_state.current_scale) - _pan_state.current_offset.y;
+        selection_world_rect.w = _selection_rect.w / _zoom_state.current_scale;
+        selection_world_rect.h = _selection_rect.h / _zoom_state.current_scale;
+
+        SDL_Rect intersection_world;
+        if (SDL_IntersectRect(&selection_world_rect, &texture_rect, &intersection_world) ==
+            SDL_FALSE) {
+            return;
+        }
+
+        if (intersection_world.w > 0 && intersection_world.h > 0) {
+            void* pixels;
+            int pitch;
+            auto texture = state.texture_sprite.texture();
+
+            if (SDL_LockTexture(texture->get(), &intersection_world, &pixels, &pitch) < 0) {
+                core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
+                return;
+            }
+
+            try {
+                cv::Mat mat(intersection_world.h, intersection_world.w, CV_8UC4, pixels, pitch);
+
+                cv::Mat mat_gray;
+                cv::cvtColor(mat, mat_gray, cv::COLOR_RGBA2GRAY);
+
+                int threshold_value = 1;
+                cv::Mat thresholded;
+                cv::threshold(mat_gray, thresholded, threshold_value, 255, cv::THRESH_BINARY);
+
+                std::vector<std::vector<cv::Point>> contours;
+                cv::findContours(thresholded, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+                /* cv::Mat dilated; */
+                /* cv::dilate(thresholded, dilated, ); */
+
+                /* cv::imshow("Thresholded", thresholded); */
+                /* cv::waitKey(1); */
+
+                state.frames.clear();
+                for (const auto& contour : contours) {
+                    cv::Rect bounding_rect = cv::boundingRect(contour);
+
+                    SDL_Rect frame_rect{
+                        static_cast<int>((bounding_rect.x + intersection_world.x) * _zoom_state.current_scale),
+                        static_cast<int>((bounding_rect.y + intersection_world.y) * _zoom_state.current_scale),
+                        static_cast<int>(bounding_rect.width * _zoom_state.current_scale),
+                        static_cast<int>(bounding_rect.height * _zoom_state.current_scale)};
+
+                    state.frames.push_back(frame_rect);
+                }
+            } catch (const std::exception& ex) {
+                core::Logger::error("Failed to process the selected area: %s", ex.what());
+            }
+
+            SDL_UnlockTexture(texture->get());
+        }
+    }
 }
 
 void Viewport::handle_viewport_click(float x, float y, core::State& state) {
@@ -329,11 +402,17 @@ void Viewport::render_grid_background(core::State& state) {
     }
 }
 
-ImVec2 Viewport::lerp(const ImVec2& lhs, const ImVec2& rhs, float t) {
-    return {lhs.x + t * (rhs.x - lhs.x), lhs.y + t * (rhs.y - lhs.y)};
+void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
+    for (const SDL_Rect& frame : frames) {
+        SDL_Rect render_frame_rect{
+            static_cast<int>((frame.x + _pan_state.current_offset.x) * _zoom_state.current_scale),
+            static_cast<int>((frame.y + _pan_state.current_offset.y) * _zoom_state.current_scale),
+            static_cast<int>(frame.w * _zoom_state.current_scale),
+            static_cast<int>(frame.h * _zoom_state.current_scale),
+        };
+        SDL_SetRenderDrawColor(_renderer.get(), 0, 255, 0, 255);
+        SDL_RenderDrawRect(_renderer.get(), &render_frame_rect);
+    }
 }
-
-float Viewport::lerp(float lhs, float rhs, float t) { return lhs + t * (rhs - lhs); }
-
 }  // namespace components
 }  // namespace piksy

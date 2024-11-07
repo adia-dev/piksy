@@ -1,10 +1,11 @@
 #include <components/console.hpp>
 #include <core/config.hpp>
+#include "core/state.hpp"
 
 namespace piksy {
 namespace components {
 
-void Console::update() {}
+void Console::update(core::State& state) {}
 
 void Console::render(core::State& state) {
     ImGui::Begin("Console");

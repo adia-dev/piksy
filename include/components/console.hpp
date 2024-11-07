@@ -10,7 +10,7 @@ namespace components {
 
 class Console : public UIComponent {
    public:
-    void update() override;
+    void update(core::State& state) override;
     void render(core::State& state) override;
 
    private:

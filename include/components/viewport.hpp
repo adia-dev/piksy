@@ -8,6 +8,7 @@
 #include <core/state.hpp>
 #include <managers/resource_manager.hpp>
 #include <rendering/renderer.hpp>
+#include <vector>
 
 namespace piksy {
 namespace components {
@@ -17,7 +18,7 @@ class Viewport : public UIComponent {
     explicit Viewport(rendering::Renderer& renderer, managers::ResourceManager& resource_manager);
     ~Viewport();
 
-    void update() override;
+    void update(core::State& state) override;
     void render(core::State& state) override;
 
     void notify_dropped_file(core::State& state, const std::string& dropped_file_path);
@@ -27,8 +28,9 @@ class Viewport : public UIComponent {
     void handle_viewport_click(float x, float y, core::State& state);
     void render_placeholder_text();
 
-    void render_selection_rect();
+    void render_selection_rect(core::State& state);
     void render_grid_background(core::State& state);
+    void render_frames(const std::vector<SDL_Rect>& frames) const;
 
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
 
@@ -65,13 +67,11 @@ class Viewport : public UIComponent {
 
     ImVec2 _viewport_size;
     SDL_Rect _selection_rect;
+    std::vector<SDL_Rect> _frames;
 
     MouseState _mouse_state;
     ZoomState _zoom_state;
     PanState _pan_state;
-
-    ImVec2 lerp(const ImVec2& lhs, const ImVec2& rhs, float t);
-    float lerp(float lhs, float rhs, float t);
 };
 
 }  // namespace components

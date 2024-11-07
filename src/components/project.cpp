@@ -17,7 +17,7 @@ Project::Project(managers::ResourceManager& resource_manager, core::State& state
     build_directory_cache(state.current_path);
 }
 
-void Project::update() {}
+void Project::update(core::State& state) {}
 
 void Project::render(core::State& state) {
     ImGui::Begin("Project");

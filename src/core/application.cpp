@@ -4,18 +4,17 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_internal.h>
 
+#include <components/animation_preview.hpp>
 #include <components/console.hpp>
 #include <components/inspector.hpp>
 #include <components/project.hpp>
 #include <components/viewport.hpp>
 #include <core/application.hpp>
+#include <core/config.hpp>
 #include <core/logger.hpp>
 #include <core/state.hpp>
 #include <managers/resource_manager.hpp>
 #include <memory>
-
-#include "components/animation_preview.hpp"
-#include "core/config.hpp"
 
 namespace piksy {
 namespace core {
@@ -179,7 +178,7 @@ void Application::handle_events() {
 
 void Application::update() {
     for (auto &[name, component] : _ui_components) {
-        component->update();
+        component->update(_state);
     }
 }
 

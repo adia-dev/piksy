@@ -15,7 +15,7 @@ class Project : public UIComponent {
    public:
     explicit Project(managers::ResourceManager& resource_manager, core::State& state);
 
-    void update() override;
+    void update(core::State& state) override;
     void render(core::State& state) override;
 
    private:
