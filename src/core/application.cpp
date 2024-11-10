@@ -16,6 +16,8 @@
 #include <managers/resource_manager.hpp>
 #include <memory>
 
+#include "SDL_render.h"
+
 namespace piksy {
 namespace core {
 
@@ -286,8 +288,18 @@ void Application::render() {
     // ImGui::ShowDemoWindow(&_show_demo_window);
 
     ImGui::Render();
-    SDL_RenderSetScale(_renderer.get(), _io->DisplayFramebufferScale.x,
-                       _io->DisplayFramebufferScale.y);
+    int rw = 0, rh = 0;
+    SDL_GetRendererOutputSize(_renderer.get(), &rw, &rh);
+    if (rw != _config.window_config.width) {
+        float width_scale = (float)rw / (float)_config.window_config.width;
+        float height_scale = (float)rh / (float)_config.window_config.height;
+
+        if (width_scale != height_scale) {
+            fprintf(stderr, "WARNING: width scale != height scale\n");
+        }
+
+        SDL_RenderSetScale(_renderer.get(), width_scale, height_scale);
+    }
     SDL_SetRenderDrawColor(_renderer.get(), static_cast<Uint8>(_clear_color.x * 255),
                            static_cast<Uint8>(_clear_color.y * 255),
                            static_cast<Uint8>(_clear_color.z * 255),
