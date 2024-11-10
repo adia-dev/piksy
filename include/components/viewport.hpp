@@ -24,21 +24,25 @@ class Viewport : public UIComponent {
     void notify_dropped_file(core::State& state, const std::string& dropped_file_path);
 
    private:
-    void create_render_texture(int width, int height);
-    void handle_viewport_click(float x, float y, core::State& state);
-    void render_placeholder_text();
-
-    void render_selection_rect(core::State& state);
-    void render_grid_background(core::State& state);
-    void render_frames(const std::vector<SDL_Rect>& frames) const;
-
-    SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
-
+    // Processing methods
+    void handle_mouse_input(core::State& state);
     void process_zoom();
     void process_panning();
     void update_zoom();
     void update_pan();
-    void handle_mouse_input(core::State& state);
+    void process_selection(core::State& state);
+
+    // Rendering methods
+    void create_render_texture(int width, int height);
+    void render_placeholder_text();
+    void render_texture(core::State& state);
+    void render_grid_background(core::State& state);
+    void render_selection_rect();
+    void render_frames(const std::vector<SDL_Rect>& frames) const;
+
+    // Utility methods
+    void handle_viewport_click(float x, float y, core::State& state);
+    SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
     void swap_texture_color(const SDL_Color& from, const SDL_Color& to, core::State& state);
 
     // State structures
@@ -67,12 +71,10 @@ class Viewport : public UIComponent {
 
     ImVec2 _viewport_size;
     SDL_Rect _selection_rect;
-    std::vector<SDL_Rect> _frames;
 
     MouseState _mouse_state;
     ZoomState _zoom_state;
     PanState _pan_state;
 };
-
 }  // namespace components
 }  // namespace piksy

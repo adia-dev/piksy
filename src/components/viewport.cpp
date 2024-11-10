@@ -12,8 +12,7 @@
 #include <opencv2/opencv.hpp>
 #include <rendering/sprite.hpp>
 #include <utils/dump.hpp>
-
-#include "utils/maths.hpp"
+#include <utils/maths.hpp>
 
 namespace piksy {
 namespace components {
@@ -50,6 +49,10 @@ void Viewport::create_render_texture(int width, int height) {
 void Viewport::update(core::State& state) {
     update_zoom();
     update_pan();
+
+    if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
+        process_selection(state);
+    }
 }
 
 void Viewport::render(core::State& state) {
@@ -71,56 +74,21 @@ void Viewport::render(core::State& state) {
     SDL_SetRenderDrawColor(_renderer.get(), 0, 0, 0, 255);
     SDL_RenderClear(_renderer.get());
 
-    if (state.texture_sprite.texture() != nullptr) {
-        state.texture_sprite.render(_renderer.get(), _zoom_state.current_scale,
-                                    _pan_state.current_offset.x, _pan_state.current_offset.y);
-    } else {
-        auto font = _resource_manager.get_font(std::string(RESOURCE_DIR) +
-                                               "/fonts/PixelifySans-Regular.ttf");
-        if (font != nullptr) {
-            const char* placeholder_text = "No texture loaded. Please insert a texture.";
-            SDL_Color text_color{255, 255, 255, 255};
-            SDL_Surface* text_surface =
-                TTF_RenderText_Blended(font.get()->get(), placeholder_text, text_color);
-            if (text_surface != nullptr) {
-                SDL_Texture* text_texture =
-                    SDL_CreateTextureFromSurface(_renderer.get(), text_surface);
-                if (text_texture != nullptr) {
-                    int text_width = text_surface->w;
-                    int text_height = text_surface->h;
-                    SDL_Rect dest_rect = {static_cast<int>((_viewport_size.x - text_width) / 2),
-                                          static_cast<int>((_viewport_size.y - text_height) / 2),
-                                          text_width, text_height};
-                    SDL_RenderCopy(_renderer.get(), text_texture, nullptr, &dest_rect);
-                    SDL_DestroyTexture(text_texture);
-                }
-                SDL_FreeSurface(text_surface);
-            }
-        }
-    }
-
     render_grid_background(state);
+    render_texture(state);
 
     if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
-        render_selection_rect(state);
+        render_selection_rect();
     }
 
     render_frames(state.frames);
 
-    SDL_Rect mouse_rect{
-        static_cast<int>(_mouse_state.current_pos.x) - 10,
-        static_cast<int>(_mouse_state.current_pos.y) - 10,
-        150,
-        150,
-    };
-    SDL_SetRenderDrawColor(_renderer.get(), state.replacement_color[0], state.replacement_color[1],
-                           state.replacement_color[2], state.replacement_color[3]);
-    SDL_RenderFillRect(_renderer.get(), &mouse_rect);
-
     SDL_SetRenderTarget(_renderer.get(), nullptr);
 
+    // Display the rendered texture
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
+    // Handle mouse input here, after ImGui::Begin and before ImGui::End
     handle_mouse_input(state);
 
     ImGui::End();
@@ -135,8 +103,10 @@ void Viewport::notify_dropped_file(core::State& state, const std::string& droppe
     }
 }
 
+// Processing methods
+
 void Viewport::handle_mouse_input(core::State& state) {
-    if (ImGui::IsItemHovered()) {
+    if (ImGui::IsWindowHovered()) {
         ImVec2 mouse_pos = ImGui::GetMousePos();
         ImVec2 image_pos = ImGui::GetItemRectMin();
         ImVec2 relative_pos = {mouse_pos.x - image_pos.x, mouse_pos.y - image_pos.y};
@@ -192,7 +162,106 @@ void Viewport::update_pan() {
         utils::maths::lerp(_pan_state.current_offset, _pan_state.target_offset, 0.1f);
 }
 
-void Viewport::render_selection_rect(core::State& state) {
+void Viewport::process_selection(core::State& state) {
+    if (!state.texture_sprite.texture()) return;
+
+    // Convert screen coordinates to world coordinates
+    float x0 = (_mouse_state.start_pos.x / _zoom_state.current_scale) - _pan_state.current_offset.x;
+    float y0 = (_mouse_state.start_pos.y / _zoom_state.current_scale) - _pan_state.current_offset.y;
+    float x1 =
+        (_mouse_state.current_pos.x / _zoom_state.current_scale) - _pan_state.current_offset.x;
+    float y1 =
+        (_mouse_state.current_pos.y / _zoom_state.current_scale) - _pan_state.current_offset.y;
+
+    SDL_Rect selection_world_rect = {
+        static_cast<int>(std::min(x0, x1)), static_cast<int>(std::min(y0, y1)),
+        static_cast<int>(std::abs(x1 - x0)), static_cast<int>(std::abs(y1 - y0))};
+
+    SDL_Rect texture_rect = state.texture_sprite.rect();
+
+    SDL_Rect intersection_world;
+    if (SDL_IntersectRect(&selection_world_rect, &texture_rect, &intersection_world) == SDL_FALSE) {
+        return;
+    }
+
+    if (intersection_world.w > 0 && intersection_world.h > 0) {
+        void* pixels;
+        int pitch;
+        auto texture = state.texture_sprite.texture();
+
+        if (SDL_LockTexture(texture->get(), &intersection_world, &pixels, &pitch) < 0) {
+            core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
+            return;
+        }
+
+        try {
+            cv::Mat mat(intersection_world.h, intersection_world.w, CV_8UC4, pixels, pitch);
+
+            cv::Mat mat_gray;
+            cv::cvtColor(mat, mat_gray, cv::COLOR_RGBA2GRAY);
+
+            int threshold_value = 1;
+            cv::Mat thresholded;
+            cv::threshold(mat_gray, thresholded, threshold_value, 255, cv::THRESH_BINARY);
+
+            std::vector<std::vector<cv::Point>> contours;
+            cv::findContours(thresholded, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+            state.frames.clear();
+            for (const auto& contour : contours) {
+                cv::Rect bounding_rect = cv::boundingRect(contour);
+
+                SDL_Rect frame_rect{bounding_rect.x + intersection_world.x,
+                                    bounding_rect.y + intersection_world.y, bounding_rect.width,
+                                    bounding_rect.height};
+
+                state.frames.push_back(frame_rect);
+            }
+        } catch (const std::exception& ex) {
+            core::Logger::error("Failed to process the selected area: %s", ex.what());
+        }
+
+        SDL_UnlockTexture(texture->get());
+    }
+}
+
+// Rendering methods
+
+void Viewport::render_texture(core::State& state) {
+    if (state.texture_sprite.texture() != nullptr) {
+        state.texture_sprite.render(_renderer.get(), _zoom_state.current_scale,
+                                    _pan_state.current_offset.x, _pan_state.current_offset.y);
+    } else {
+        render_placeholder_text();
+    }
+}
+
+void Viewport::render_placeholder_text() {
+    auto font =
+        _resource_manager.get_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
+    if (font != nullptr) {
+        const char* placeholder_text = "No texture loaded. Please insert a texture.";
+        SDL_Color text_color{255, 255, 255, 255};
+        SDL_Surface* text_surface =
+            TTF_RenderText_Blended(font.get()->get(), placeholder_text, text_color);
+        if (text_surface != nullptr) {
+            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(_renderer.get(), text_surface);
+            if (text_texture != nullptr) {
+                int text_width = text_surface->w;
+                int text_height = text_surface->h;
+                SDL_Rect dest_rect = {static_cast<int>((_viewport_size.x - text_width) / 2),
+                                      static_cast<int>((_viewport_size.y - text_height) / 2),
+                                      text_width, text_height};
+                SDL_RenderCopy(_renderer.get(), text_texture, nullptr, &dest_rect);
+                SDL_DestroyTexture(text_texture);
+            }
+            SDL_FreeSurface(text_surface);
+        }
+    }
+}
+
+void Viewport::render_selection_rect() {
+    // Render selection rectangle in screen coordinates
     int start_x = static_cast<int>(_mouse_state.start_pos.x);
     int start_y = static_cast<int>(_mouse_state.start_pos.y);
     int current_x = static_cast<int>(_mouse_state.current_pos.x);
@@ -205,73 +274,57 @@ void Viewport::render_selection_rect(core::State& state) {
     SDL_RenderDrawRect(_renderer.get(), &_selection_rect);
     SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 25);
     SDL_RenderFillRect(_renderer.get(), &_selection_rect);
+}
 
-    if (state.texture_sprite.texture() != nullptr) {
-        SDL_Rect texture_rect = state.texture_sprite.rect();
+void Viewport::render_grid_background(core::State& state) {
+    SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
 
-        SDL_Rect selection_world_rect;
-        selection_world_rect.x =
-            (_selection_rect.x / _zoom_state.current_scale) - _pan_state.current_offset.x;
-        selection_world_rect.y =
-            (_selection_rect.y / _zoom_state.current_scale) - _pan_state.current_offset.y;
-        selection_world_rect.w = _selection_rect.w / _zoom_state.current_scale;
-        selection_world_rect.h = _selection_rect.h / _zoom_state.current_scale;
+    float scaled_grid_cell_size =
+        std::max(state.viewport_grid_cell_size * _zoom_state.current_scale, 1.0f);
 
-        SDL_Rect intersection_world;
-        if (SDL_IntersectRect(&selection_world_rect, &texture_rect, &intersection_world) ==
-            SDL_FALSE) {
-            return;
+    float offset_x =
+        fmod(_pan_state.current_offset.x * _zoom_state.current_scale, scaled_grid_cell_size);
+    float offset_y =
+        fmod(_pan_state.current_offset.y * _zoom_state.current_scale, scaled_grid_cell_size);
+
+    int num_vertical_lines =
+        static_cast<int>(std::ceil(_viewport_size.x / scaled_grid_cell_size)) + 1;
+    int num_horizontal_lines =
+        static_cast<int>(std::ceil(_viewport_size.y / scaled_grid_cell_size)) + 1;
+
+    for (int i = 0; i < num_vertical_lines; ++i) {
+        float x = offset_x + i * scaled_grid_cell_size;
+        if (x >= 0 && x <= _viewport_size.x) {
+            SDL_RenderDrawLine(_renderer.get(), static_cast<int>(x), 0, static_cast<int>(x),
+                               static_cast<int>(_viewport_size.y));
         }
+    }
 
-        if (intersection_world.w > 0 && intersection_world.h > 0) {
-            void* pixels;
-            int pitch;
-            auto texture = state.texture_sprite.texture();
-
-            if (SDL_LockTexture(texture->get(), &intersection_world, &pixels, &pitch) < 0) {
-                core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
-                return;
-            }
-
-            try {
-                cv::Mat mat(intersection_world.h, intersection_world.w, CV_8UC4, pixels, pitch);
-
-                cv::Mat mat_gray;
-                cv::cvtColor(mat, mat_gray, cv::COLOR_RGBA2GRAY);
-
-                int threshold_value = 1;
-                cv::Mat thresholded;
-                cv::threshold(mat_gray, thresholded, threshold_value, 255, cv::THRESH_BINARY);
-
-                std::vector<std::vector<cv::Point>> contours;
-                cv::findContours(thresholded, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-                /* cv::Mat dilated; */
-                /* cv::dilate(thresholded, dilated, ); */
-
-                /* cv::imshow("Thresholded", thresholded); */
-                /* cv::waitKey(1); */
-
-                state.frames.clear();
-                for (const auto& contour : contours) {
-                    cv::Rect bounding_rect = cv::boundingRect(contour);
-
-                    SDL_Rect frame_rect{
-                        static_cast<int>((bounding_rect.x + intersection_world.x) * _zoom_state.current_scale),
-                        static_cast<int>((bounding_rect.y + intersection_world.y) * _zoom_state.current_scale),
-                        static_cast<int>(bounding_rect.width * _zoom_state.current_scale),
-                        static_cast<int>(bounding_rect.height * _zoom_state.current_scale)};
-
-                    state.frames.push_back(frame_rect);
-                }
-            } catch (const std::exception& ex) {
-                core::Logger::error("Failed to process the selected area: %s", ex.what());
-            }
-
-            SDL_UnlockTexture(texture->get());
+    for (int j = 0; j < num_horizontal_lines; ++j) {
+        float y = offset_y + j * scaled_grid_cell_size;
+        if (y >= 0 && y <= _viewport_size.y) {
+            SDL_RenderDrawLine(_renderer.get(), 0, static_cast<int>(y),
+                               static_cast<int>(_viewport_size.x), static_cast<int>(y));
         }
     }
 }
+
+void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
+    SDL_SetRenderDrawColor(_renderer.get(), 0, 255, 0, 255);
+
+    for (const SDL_Rect& frame : frames) {
+        // Transform frame coordinates from world space to screen space
+        SDL_Rect render_frame_rect{
+            static_cast<int>((frame.x + _pan_state.current_offset.x) * _zoom_state.current_scale),
+            static_cast<int>((frame.y + _pan_state.current_offset.y) * _zoom_state.current_scale),
+            static_cast<int>(frame.w * _zoom_state.current_scale),
+            static_cast<int>(frame.h * _zoom_state.current_scale),
+        };
+        SDL_RenderDrawRect(_renderer.get(), &render_frame_rect);
+    }
+}
+
+// Utility methods
 
 void Viewport::handle_viewport_click(float x, float y, core::State& state) {
     float world_x = (x / _zoom_state.current_scale) - _pan_state.current_offset.x;
@@ -369,50 +422,5 @@ SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprit
     return color;
 }
 
-void Viewport::render_grid_background(core::State& state) {
-    SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
-
-    float scaled_grid_cell_size =
-        std::max(state.viewport_grid_cell_size * _zoom_state.current_scale, 1.0f);
-
-    float offset_x =
-        fmod(_pan_state.current_offset.x * _zoom_state.current_scale, scaled_grid_cell_size);
-    float offset_y =
-        fmod(_pan_state.current_offset.y * _zoom_state.current_scale, scaled_grid_cell_size);
-
-    int num_vertical_lines =
-        static_cast<int>(std::ceil(_viewport_size.x / scaled_grid_cell_size)) + 1;
-    int num_horizontal_lines =
-        static_cast<int>(std::ceil(_viewport_size.y / scaled_grid_cell_size)) + 1;
-
-    for (int i = 0; i < num_vertical_lines; ++i) {
-        float x = offset_x + i * scaled_grid_cell_size;
-        if (x >= 0 && x <= _viewport_size.x) {
-            SDL_RenderDrawLine(_renderer.get(), static_cast<int>(x), 0, static_cast<int>(x),
-                               static_cast<int>(_viewport_size.y));
-        }
-    }
-
-    for (int j = 0; j < num_horizontal_lines; ++j) {
-        float y = offset_y + j * scaled_grid_cell_size;
-        if (y >= 0 && y <= _viewport_size.y) {
-            SDL_RenderDrawLine(_renderer.get(), 0, static_cast<int>(y),
-                               static_cast<int>(_viewport_size.x), static_cast<int>(y));
-        }
-    }
-}
-
-void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
-    for (const SDL_Rect& frame : frames) {
-        SDL_Rect render_frame_rect{
-            static_cast<int>((frame.x + _pan_state.current_offset.x) * _zoom_state.current_scale),
-            static_cast<int>((frame.y + _pan_state.current_offset.y) * _zoom_state.current_scale),
-            static_cast<int>(frame.w * _zoom_state.current_scale),
-            static_cast<int>(frame.h * _zoom_state.current_scale),
-        };
-        SDL_SetRenderDrawColor(_renderer.get(), 0, 255, 0, 255);
-        SDL_RenderDrawRect(_renderer.get(), &render_frame_rect);
-    }
-}
 }  // namespace components
 }  // namespace piksy
