@@ -124,7 +124,8 @@ void Application::init_components() {
     _ui_components.emplace(
         "Viewport", std::make_unique<components::Viewport>(_state, _renderer, _resource_manager));
     _ui_components.emplace("Console", std::make_unique<components::Console>(_state));
-    _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_state, _renderer));
+    /* _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_state,
+     * _renderer)); */
     _ui_components.emplace("Project",
                            std::make_unique<components::Project>(_state, _resource_manager));
     _ui_components.emplace("Animation Preview",
@@ -291,7 +292,7 @@ void Application::render() {
         ImGui::PopStyleColor(2);
     }
 
-    ImGui::ShowDemoWindow(&_show_demo_window);
+    /* ImGui::ShowDemoWindow(&_show_demo_window); */
 
     ImGui::Render();
     SDL_RenderSetScale(_renderer.get(), _io->DisplayFramebufferScale.x,

@@ -60,26 +60,6 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries) {
 }
 
 void Project::render_file_explorer() {
-    static ImGuiTextFilter filter;
-    filter.Draw("Filter");
-
-    ImGui::Separator();
-
-    ImGui::Text("Current Path: %s", _state.current_path.string().c_str());
-
-    if (_state.current_path.has_parent_path() && ImGui::Button("..")) {
-        if (_state.current_path.has_parent_path()) {
-            _state.current_path = _state.current_path.parent_path();
-            build_directory_cache(_state.current_path);
-        }
-    }
-
-    if (ImGui::Button("Reload")) {
-        build_directory_cache(_state.current_path);
-    }
-
-    ImGui::Separator();
-
     ImGui::BeginChild("File Browser", ImVec2(0, 0), false);
     render_directory_entries(_directory_cache);
     ImGui::EndChild();
