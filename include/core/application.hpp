@@ -40,27 +40,6 @@ class Application {
     const rendering::Renderer &renderer() const;
 
    private:
-    Application &operator=(Application &&) = delete;
-    Application &operator=(const Application &) = delete;
-    Application(Application &&) = delete;
-    Application(const Application &) = delete;
-
-    rendering::Window _window;
-    rendering::Renderer _renderer;
-    managers::ResourceManager _resource_manager;
-
-    ImGuiIO *_io = nullptr;
-
-    // TODO: move this into the state
-    bool _show_demo_window = true;
-    bool _is_running = true;
-    ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    Config _config;
-    State _state;
-
-    std::unordered_map<std::string, std::unique_ptr<components::UIComponent>> _ui_components;
-
     // NOTE: too many init methods, code smell like sh*t
     void init();
 
@@ -81,6 +60,28 @@ class Application {
     void render();
 
     void set_fancy_imgui_style();
+
+   private:
+    Application &operator=(Application &&) = delete;
+    Application &operator=(const Application &) = delete;
+    Application(Application &&) = delete;
+    Application(const Application &) = delete;
+
+    rendering::Window _window;
+    rendering::Renderer _renderer;
+    managers::ResourceManager _resource_manager;
+
+    ImGuiIO *_io = nullptr;
+
+    // TODO: move this into the state
+    bool _show_demo_window = true;
+    bool _is_running = true;
+    ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    Config _config;
+    State _state;
+
+    std::unordered_map<std::string, std::unique_ptr<components::UIComponent>> _ui_components;
 };
 }  // namespace core
 }  // namespace piksy

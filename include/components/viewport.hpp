@@ -43,6 +43,7 @@ class Viewport : public UIComponent {
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
     void swap_texture_color(const SDL_Color& from, const SDL_Color& to);
 
+   private:
     rendering::Renderer& _renderer;
     managers::ResourceManager& _resource_manager;
     SDL_Texture* _render_texture = nullptr;

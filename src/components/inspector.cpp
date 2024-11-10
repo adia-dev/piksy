@@ -26,8 +26,11 @@ void Inspector::render() {
     ImGui::Separator();
 
     ImGui::Text("Replacement Color");
+    ImGui::SameLine();
     help_marker("This color is used to replace specific colors in the texture.");
-    ImGui::ColorEdit4("##Replacement Color", _state.replacement_color);
+    ImGui::ColorEdit4("##Replacement Color", reinterpret_cast<float*>(&_state.replacement_color),
+                      ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel |
+                          ImGuiColorEditFlags_AlphaPreview);
 
     ImGui::Separator();
 

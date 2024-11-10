@@ -17,6 +17,7 @@ class Inspector : public UIComponent {
     void render_texture_properties(std::shared_ptr<rendering::Texture2D> texture);
     void help_marker(const std::string& desc);
 
+   private:
     rendering::Renderer& _renderer;
 };
 }  // namespace components

@@ -16,6 +16,9 @@ class Console : public UIComponent {
     void render() override;
 
    private:
+    void render_console();
+
+   private:
     ImGuiTextFilter _filter;
     bool _auto_scroll = true;
     bool _scroll_to_bottom = false;
@@ -26,8 +29,6 @@ class Console : public UIComponent {
     bool _show_warn = true;
     bool _show_error = true;
     bool _show_fatal = true;
-
-    void render_console();
 };
 
 }  // namespace components

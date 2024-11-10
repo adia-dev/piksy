@@ -63,31 +63,21 @@ class Logger {
     static void fatal(const std::string& format_str, Args&&... args) {
         std::string message =
             get().format_exception_message(format_str, std::forward<Args>(args)...);
-        get().log(LogLevel::Fatal, message);  
+        get().log(LogLevel::Fatal, message);
 
-        throw std::runtime_error(message);  
+        throw std::runtime_error(message);
     }
 
     template <typename... Args>
     static void fatal(const std::exception& ex, const std::string& format_str, Args&&... args) {
         std::string message =
             get().format_exception_message(format_str, std::forward<Args>(args)...);
-        get().log(LogLevel::Fatal, message + ": " + ex.what());  
+        get().log(LogLevel::Fatal, message + ": " + ex.what());
 
-        throw std::runtime_error(message);  
+        throw std::runtime_error(message);
     }
 
    private:
-    Logger() = default;
-    ~Logger() {
-        if (_file_stream.is_open()) _file_stream.close();
-    }
-
-    Logger(const Logger&) = delete;
-    Logger(Logger&&) = delete;
-    Logger& operator=(const Logger&) = delete;
-    Logger& operator=(Logger&&) = delete;
-
     template <typename... Args>
     void log(LogLevel level, const std::string& format_str, Args&&... args) {
         if (level < _config->level) return;
@@ -190,6 +180,17 @@ class Logger {
         }
         return message;
     }
+
+   private:
+    Logger() = default;
+    ~Logger() {
+        if (_file_stream.is_open()) _file_stream.close();
+    }
+
+    Logger(const Logger&) = delete;
+    Logger(Logger&&) = delete;
+    Logger& operator=(const Logger&) = delete;
+    Logger& operator=(Logger&&) = delete;
 
     LoggerConfig* _config = nullptr;
     std::mutex _mutex;
