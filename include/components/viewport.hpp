@@ -25,7 +25,6 @@ class Viewport : public UIComponent {
     void notify_dropped_file(const std::string& dropped_file_path);
 
    private:
-    // Processing methods
     void handle_mouse_input();
     void process_zoom();
     void process_panning();
@@ -33,7 +32,6 @@ class Viewport : public UIComponent {
     void update_pan();
     void process_selection();
 
-    // Rendering methods
     void create_render_texture(int width, int height);
     void render_placeholder_text();
     void render_texture();
@@ -41,7 +39,6 @@ class Viewport : public UIComponent {
     void render_selection_rect();
     void render_frames(const std::vector<SDL_Rect>& frames) const;
 
-    // Utility methods
     void handle_viewport_click(float x, float y);
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
     void swap_texture_color(const SDL_Color& from, const SDL_Color& to);

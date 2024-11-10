@@ -63,18 +63,18 @@ class Logger {
     static void fatal(const std::string& format_str, Args&&... args) {
         std::string message =
             get().format_exception_message(format_str, std::forward<Args>(args)...);
-        get().log(LogLevel::Fatal, message);  // Log the fatal message
+        get().log(LogLevel::Fatal, message);  
 
-        throw std::runtime_error(message);  // Throw the fatal exception with the message
+        throw std::runtime_error(message);  
     }
 
     template <typename... Args>
     static void fatal(const std::exception& ex, const std::string& format_str, Args&&... args) {
         std::string message =
             get().format_exception_message(format_str, std::forward<Args>(args)...);
-        get().log(LogLevel::Fatal, message + ": " + ex.what());  // Log with exception details
+        get().log(LogLevel::Fatal, message + ": " + ex.what());  
 
-        throw std::runtime_error(message);  // Rethrow or wrap as needed
+        throw std::runtime_error(message);  
     }
 
    private:
@@ -105,10 +105,8 @@ class Logger {
         std::string formatted_message = format_message(level, message);
         std::lock_guard<std::mutex> lock(_mutex);
 
-        // Append the message to the in-memory log
         _messages.push_back({level, formatted_message});
 
-        // Limit the size of the log (optional)
         const size_t MAX_LOG_SIZE = 1000;
         if (_messages.size() > MAX_LOG_SIZE) {
             _messages.pop_front();

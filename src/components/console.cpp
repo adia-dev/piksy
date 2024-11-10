@@ -11,7 +11,6 @@ void Console::update() {}
 void Console::render() {
     ImGui::Begin("Console");
 
-    // Options menu
     if (ImGui::Button("Clear")) {
         core::Logger::get().clear_messages();
     }
@@ -22,7 +21,6 @@ void Console::render() {
 
     ImGui::Separator();
 
-    // Log level filters
     if (ImGui::Checkbox("Trace", &_show_trace)) {
         _scroll_to_bottom = true;
     }
@@ -60,7 +58,6 @@ void Console::render() {
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
     for (const auto& [level, message] : messages) {
-        // Apply log level filters
         bool show_message = false;
         switch (level) {
             case core::LogLevel::Trace:
@@ -90,12 +87,10 @@ void Console::render() {
             continue;
         }
 
-        // Apply text filter
         if (!_filter.PassFilter(message.c_str())) {
             continue;
         }
 
-        // Color coding based on log level
         ImVec4 color = core::LogLevelToColor(level);
 
         ImGui::PushStyleColor(ImGuiCol_Text, color);

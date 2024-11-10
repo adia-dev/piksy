@@ -180,8 +180,8 @@ struct ImGuiConfig {
         style.ItemInnerSpacing = ImVec2(4.0f, 4.0f);
 
         // Font Scaling
-        ImGuiIO& io = ImGui::GetIO();
-        io.FontGlobalScale = 0.95f;  // Adjust this value for desired font size
+        /* ImGuiIO& io = ImGui::GetIO(); */
+        /* io.FontGlobalScale = 0.95f; */
     }
 };
 

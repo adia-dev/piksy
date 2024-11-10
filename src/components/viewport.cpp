@@ -100,10 +100,8 @@ void Viewport::render() {
 
     SDL_SetRenderTarget(_renderer.get(), nullptr);
 
-    // Display the rendered texture
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
-    // Handle mouse input here, after ImGui::Begin and before ImGui::End
     handle_mouse_input();
 
     ImGui::End();
@@ -117,8 +115,6 @@ void Viewport::notify_dropped_file(const std::string& dropped_file_path) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());
     }
 }
-
-// Processing methods
 
 void Viewport::handle_mouse_input() {
     if (ImGui::IsWindowHovered()) {
@@ -182,7 +178,6 @@ void Viewport::update_pan() {
 void Viewport::process_selection() {
     if (!_state.texture_sprite.texture()) return;
 
-    // Convert screen coordinates to world coordinates
     float x0 = (_state.mouse_state.start_pos.x / _state.zoom_state.current_scale) -
                _state.pan_state.current_offset.x;
     float y0 = (_state.mouse_state.start_pos.y / _state.zoom_state.current_scale) -
@@ -245,7 +240,6 @@ void Viewport::process_selection() {
     }
 }
 
-// Rendering methods
 
 void Viewport::render_texture() {
     if (_state.texture_sprite.texture() != nullptr) {
@@ -282,7 +276,6 @@ void Viewport::render_placeholder_text() {
 }
 
 void Viewport::render_selection_rect() {
-    // Render selection rectangle in screen coordinates
     int start_x = static_cast<int>(_state.mouse_state.start_pos.x);
     int start_y = static_cast<int>(_state.mouse_state.start_pos.y);
     int current_x = static_cast<int>(_state.mouse_state.current_pos.x);
@@ -351,7 +344,6 @@ void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
     }
 }
 
-// Utility methods
 
 void Viewport::handle_viewport_click(float x, float y) {
     float world_x = (x / _state.zoom_state.current_scale) - _state.pan_state.current_offset.x;
@@ -436,7 +428,7 @@ SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprit
     SDL_PixelFormat* pixel_format = SDL_AllocFormat(format);
 
     Uint8* pixel_ptr =
-        static_cast<Uint8*>(pixels) + y * pitch + x * 4;  // Assuming 4 bytes per pixel
+        static_cast<Uint8*>(pixels) + y * pitch + x * 4;  
     Uint32 pixel_value = *(reinterpret_cast<Uint32*>(pixel_ptr));
 
     SDL_Color color;

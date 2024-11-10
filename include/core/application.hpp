@@ -64,7 +64,7 @@ class Application {
     // NOTE: too many init methods, code smell like sh*t
     void init();
 
-    // Create a Facade of those two classes in order to initialize them
+    // TODO: Create a Facade of those two classes in order to initialize them
     void init_sdl2();
     void init_imgui();
 
