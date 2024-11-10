@@ -26,6 +26,12 @@ struct PanState {
     float pan_speed = 0.7f;
 };
 
+struct AnimationState {
+    bool is_playing = false;
+    float fps = 24.0f;
+    int current_frame = 0;
+};
+
 struct State {
     rendering::Sprite texture_sprite;
     float replacement_color[4]{0.0f, 0.0f, 0.0f, 0.0f};
@@ -35,6 +41,8 @@ struct State {
     MouseState mouse_state;
     ZoomState zoom_state;
     PanState pan_state;
+    AnimationState animation_state;
+    ImVec2 viewport_size;
 
     // Frames rects from the viewport
     std::vector<SDL_Rect> frames;

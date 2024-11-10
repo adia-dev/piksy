@@ -1,12 +1,7 @@
 #pragma once
 
-#include <imgui.h>
-
 #include <components/ui_component.hpp>
-#include <core/logger.hpp>
-#include <rendering/renderer.hpp>
-
-#include "core/state.hpp"
+#include <core/state.hpp>
 
 namespace piksy {
 namespace components {
@@ -18,7 +13,14 @@ class AnimationPreview : public UIComponent {
     void render() override;
 
    private:
-    float _last_frame_time = 0.0f;
+    void render_controls();
+    void render_frames();
+    void render_frame_thumbnails();
+    void render_frame_list();
+    void adjust_pan_and_zoom_to_frame(int frame_index);
+
+   private:
+    float _frame_display_size = 100.0f;
 };
 
 }  // namespace components

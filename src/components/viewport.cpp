@@ -5,6 +5,7 @@
 #include <SDL_ttf.h>
 #include <imgui.h>
 
+#include <algorithm>
 #include <components/viewport.hpp>
 #include <core/logger.hpp>
 #include <core/state.hpp>
@@ -25,6 +26,17 @@ Viewport::Viewport(core::State& state, rendering::Renderer& renderer,
       _render_texture(nullptr),
       _viewport_size(800, 600) {
     create_render_texture(static_cast<int>(_viewport_size.x), static_cast<int>(_viewport_size.y));
+
+    // NOTE: DON'T COMMIT
+    if (_state.texture_sprite.texture() != nullptr) {
+        swap_texture_color(SDL_Color{255, 255, 255, 255},
+                           SDL_Color{
+                               static_cast<Uint8>(_state.replacement_color[0] * 255),
+                               static_cast<Uint8>(_state.replacement_color[1] * 255),
+                               static_cast<Uint8>(_state.replacement_color[2] * 255),
+                               static_cast<Uint8>(_state.replacement_color[3] * 255),
+                           });
+    }
 }
 
 Viewport::~Viewport() {
@@ -66,6 +78,7 @@ void Viewport::render() {
 
     ImVec2 viewport_size = ImGui::GetContentRegionAvail();
     if (viewport_size.x != _viewport_size.x || viewport_size.y != _viewport_size.y) {
+        _state.viewport_size = viewport_size;
         _viewport_size = viewport_size;
         create_render_texture(static_cast<int>(_viewport_size.x),
                               static_cast<int>(_viewport_size.y));
@@ -223,6 +236,7 @@ void Viewport::process_selection() {
 
                 _state.frames.push_back(frame_rect);
             }
+            // TODO: Sort the frames by their position, based on the selection rect
         } catch (const std::exception& ex) {
             core::Logger::error("Failed to process the selected area: %s", ex.what());
         }
@@ -317,10 +331,14 @@ void Viewport::render_grid_background() {
 }
 
 void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
-    SDL_SetRenderDrawColor(_renderer.get(), 0, 255, 0, 255);
+    for (size_t i = 0; i < frames.size(); ++i) {
+        const SDL_Rect& frame = frames[i];
+        if (i == _state.animation_state.current_frame) {
+            SDL_SetRenderDrawColor(_renderer.get(), 206, 2, 65, 155);
+        } else {
+            SDL_SetRenderDrawColor(_renderer.get(), 135, 235, 177, 155);
+        }
 
-    for (const SDL_Rect& frame : frames) {
-        // Transform frame coordinates from world space to screen space
         SDL_Rect render_frame_rect{
             static_cast<int>((frame.x + _state.pan_state.current_offset.x) *
                              _state.zoom_state.current_scale),
@@ -371,7 +389,7 @@ void Viewport::swap_texture_color(const SDL_Color& from, const SDL_Color& to) {
     int pitch;
 
     if (SDL_LockTexture(_state.texture_sprite.texture()->get(), nullptr, &pixels, &pitch) < 0) {
-        core::Logger::error("Failed to lock the texture to remove the background: %s",
+        core::Logger::error("Failed to lock the texture to swap the background color: %s",
                             SDL_GetError());
         return;
     }

@@ -113,7 +113,11 @@ void Application::init_fonts() {
     _resource_manager.load_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
 }
 
-void Application::init_state() {}
+void Application::init_state() {
+    // NOTE: DON'T COMMIT
+    _state.texture_sprite.set_texture(
+        _resource_manager.get_texture(std::string(RESOURCE_DIR) + "/textures/black_goku.png"));
+}
 
 void Application::init_components() {
     _ui_components.emplace(
