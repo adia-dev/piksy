@@ -1,13 +1,14 @@
 #include <components/console.hpp>
 #include <core/config.hpp>
-#include "core/state.hpp"
 
 namespace piksy {
 namespace components {
 
-void Console::update(core::State& state) {}
+Console::Console(core::State& state) : UIComponent(state) {}
 
-void Console::render(core::State& state) {
+void Console::update() {}
+
+void Console::render() {
     ImGui::Begin("Console");
 
     // Options menu

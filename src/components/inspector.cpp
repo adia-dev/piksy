@@ -4,15 +4,18 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "components/ui_component.hpp"
 #include "core/logger.hpp"
 #include "core/state.hpp"
 
 namespace piksy {
 namespace components {
+Inspector::Inspector(core::State& state, rendering::Renderer& renderer)
+    : UIComponent(state), _renderer(renderer) {}
 
-void Inspector::update(core::State& state) {}
+void Inspector::update() {}
 
-void Inspector::render(core::State& state) {
+void Inspector::render() {
     ImGui::Begin("Inspector");
 
     // Add a header with help text
@@ -27,7 +30,7 @@ void Inspector::render(core::State& state) {
     // Replacement Color Picker with help marker
     ImGui::Text("Replacement Color");
     help_marker("This color is used to replace specific colors in the texture.");
-    ImGui::ColorEdit4("##Replacement Color", state.replacement_color);
+    ImGui::ColorEdit4("##Replacement Color", _state.replacement_color);
 
     // Divider for viewport controls
     ImGui::Separator();
@@ -35,20 +38,20 @@ void Inspector::render(core::State& state) {
     ImGui::Text("Viewport");
     // TODO: rewrite this help marker
     help_marker("This color is used to replace specific colors in the texture.");
-    ImGui::SliderInt("##Viewport Grid Cell Size", &state.viewport_grid_cell_size, 0, 1000);
+    ImGui::SliderInt("##Viewport Grid Cell Size", &_state.viewport_grid_cell_size, 0, 1000);
 
     // Divider
     ImGui::Separator();
 
     // Render sprite properties
-    render_sprite_properties(state);
+    render_sprite_properties();
 
     ImGui::End();
 }
 
-void Inspector::render_sprite_properties(core::State& state) {
+void Inspector::render_sprite_properties() {
     if (ImGui::CollapsingHeader("Sprite Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-        auto& sprite = state.texture_sprite;
+        auto& sprite = _state.texture_sprite;
 
         // Position Controls with help marker
         int position[2]{sprite.x(), sprite.y()};
@@ -126,6 +129,5 @@ void Inspector::help_marker(const std::string& desc) {
     }
 }
 
-Inspector::Inspector(rendering::Renderer& renderer) : _renderer(renderer) {}
 }  // namespace components
 }  // namespace piksy

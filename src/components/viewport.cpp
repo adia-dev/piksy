@@ -17,8 +17,10 @@
 namespace piksy {
 namespace components {
 
-Viewport::Viewport(rendering::Renderer& renderer, managers::ResourceManager& resource_manager)
-    : _renderer(renderer),
+Viewport::Viewport(core::State& state, rendering::Renderer& renderer,
+                   managers::ResourceManager& resource_manager)
+    : UIComponent(state),
+      _renderer(renderer),
       _resource_manager(resource_manager),
       _render_texture(nullptr),
       _viewport_size(800, 600) {
@@ -46,16 +48,16 @@ void Viewport::create_render_texture(int width, int height) {
     }
 }
 
-void Viewport::update(core::State& state) {
+void Viewport::update() {
     update_zoom();
     update_pan();
 
-    if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
-        process_selection(state);
+    if (_state.mouse_state.is_pressed && !_state.mouse_state.is_panning) {
+        process_selection();
     }
 }
 
-void Viewport::render(core::State& state) {
+void Viewport::render() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
@@ -74,14 +76,14 @@ void Viewport::render(core::State& state) {
     SDL_SetRenderDrawColor(_renderer.get(), 0, 0, 0, 255);
     SDL_RenderClear(_renderer.get());
 
-    render_grid_background(state);
-    render_texture(state);
+    render_grid_background();
+    render_texture();
 
-    if (_mouse_state.is_pressed && !_mouse_state.is_panning) {
+    if (_state.mouse_state.is_pressed && !_state.mouse_state.is_panning) {
         render_selection_rect();
     }
 
-    render_frames(state.frames);
+    render_frames(_state.frames);
 
     SDL_SetRenderTarget(_renderer.get(), nullptr);
 
@@ -89,15 +91,15 @@ void Viewport::render(core::State& state) {
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
     // Handle mouse input here, after ImGui::Begin and before ImGui::End
-    handle_mouse_input(state);
+    handle_mouse_input();
 
     ImGui::End();
 }
 
-void Viewport::notify_dropped_file(core::State& state, const std::string& dropped_file_path) {
+void Viewport::notify_dropped_file(const std::string& dropped_file_path) {
     core::Logger::debug("Dropped file into the Viewport: %s", dropped_file_path.c_str());
     try {
-        state.texture_sprite.set_texture(_resource_manager.get_texture(dropped_file_path));
+        _state.texture_sprite.set_texture(_resource_manager.get_texture(dropped_file_path));
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());
     }
@@ -105,79 +107,83 @@ void Viewport::notify_dropped_file(core::State& state, const std::string& droppe
 
 // Processing methods
 
-void Viewport::handle_mouse_input(core::State& state) {
+void Viewport::handle_mouse_input() {
     if (ImGui::IsWindowHovered()) {
         ImVec2 mouse_pos = ImGui::GetMousePos();
         ImVec2 image_pos = ImGui::GetItemRectMin();
         ImVec2 relative_pos = {mouse_pos.x - image_pos.x, mouse_pos.y - image_pos.y};
-        _mouse_state.current_pos = relative_pos;
+        _state.mouse_state.current_pos = relative_pos;
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            _mouse_state.start_pos = _mouse_state.current_pos;
-            _mouse_state.is_pressed = true;
-            handle_viewport_click(_mouse_state.current_pos.x, _mouse_state.current_pos.y, state);
+            _state.mouse_state.start_pos = _state.mouse_state.current_pos;
+            _state.mouse_state.is_pressed = true;
+            handle_viewport_click(_state.mouse_state.current_pos.x,
+                                  _state.mouse_state.current_pos.y);
         }
 
-        _mouse_state.is_pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+        _state.mouse_state.is_pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
         process_zoom();
         process_panning();
     } else {
-        _mouse_state.is_pressed = false;
-        _mouse_state.is_panning = false;
+        _state.mouse_state.is_pressed = false;
+        _state.mouse_state.is_panning = false;
     }
 }
 
 void Viewport::process_zoom() {
     float wheel = ImGui::GetIO().MouseWheel;
     if (wheel != 0.0f) {
-        _zoom_state.target_scale += wheel * _zoom_state.zoom_speed;
-        _zoom_state.target_scale = std::clamp(_zoom_state.target_scale, 0.1f, 10.0f);
+        _state.zoom_state.target_scale += wheel * _state.zoom_state.zoom_speed;
+        _state.zoom_state.target_scale = std::clamp(_state.zoom_state.target_scale, 0.1f, 10.0f);
     }
 }
 
 void Viewport::process_panning() {
-    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && _mouse_state.is_pressed) {
-        ImVec2 delta = {
-            (_mouse_state.current_pos.x - _mouse_state.start_pos.x) / _zoom_state.current_scale,
-            (_mouse_state.current_pos.y - _mouse_state.start_pos.y) / _zoom_state.current_scale};
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && _state.mouse_state.is_pressed) {
+        ImVec2 delta = {(_state.mouse_state.current_pos.x - _state.mouse_state.start_pos.x) /
+                            _state.zoom_state.current_scale,
+                        (_state.mouse_state.current_pos.y - _state.mouse_state.start_pos.y) /
+                            _state.zoom_state.current_scale};
 
-        _pan_state.target_offset.x += delta.x;
-        _pan_state.target_offset.y += delta.y;
+        _state.pan_state.target_offset.x += delta.x;
+        _state.pan_state.target_offset.y += delta.y;
 
-        _mouse_state.start_pos = _mouse_state.current_pos;
-        _mouse_state.is_panning = true;
+        _state.mouse_state.start_pos = _state.mouse_state.current_pos;
+        _state.mouse_state.is_panning = true;
     } else {
-        _mouse_state.is_panning = false;
+        _state.mouse_state.is_panning = false;
     }
 }
 
 void Viewport::update_zoom() {
-    _zoom_state.current_scale =
-        utils::maths::lerp(_zoom_state.current_scale, _zoom_state.target_scale, 0.1f);
+    _state.zoom_state.current_scale =
+        utils::maths::lerp(_state.zoom_state.current_scale, _state.zoom_state.target_scale, 0.1f);
 }
 
 void Viewport::update_pan() {
-    _pan_state.current_offset =
-        utils::maths::lerp(_pan_state.current_offset, _pan_state.target_offset, 0.1f);
+    _state.pan_state.current_offset =
+        utils::maths::lerp(_state.pan_state.current_offset, _state.pan_state.target_offset, 0.1f);
 }
 
-void Viewport::process_selection(core::State& state) {
-    if (!state.texture_sprite.texture()) return;
+void Viewport::process_selection() {
+    if (!_state.texture_sprite.texture()) return;
 
     // Convert screen coordinates to world coordinates
-    float x0 = (_mouse_state.start_pos.x / _zoom_state.current_scale) - _pan_state.current_offset.x;
-    float y0 = (_mouse_state.start_pos.y / _zoom_state.current_scale) - _pan_state.current_offset.y;
-    float x1 =
-        (_mouse_state.current_pos.x / _zoom_state.current_scale) - _pan_state.current_offset.x;
-    float y1 =
-        (_mouse_state.current_pos.y / _zoom_state.current_scale) - _pan_state.current_offset.y;
+    float x0 = (_state.mouse_state.start_pos.x / _state.zoom_state.current_scale) -
+               _state.pan_state.current_offset.x;
+    float y0 = (_state.mouse_state.start_pos.y / _state.zoom_state.current_scale) -
+               _state.pan_state.current_offset.y;
+    float x1 = (_state.mouse_state.current_pos.x / _state.zoom_state.current_scale) -
+               _state.pan_state.current_offset.x;
+    float y1 = (_state.mouse_state.current_pos.y / _state.zoom_state.current_scale) -
+               _state.pan_state.current_offset.y;
 
     SDL_Rect selection_world_rect = {
         static_cast<int>(std::min(x0, x1)), static_cast<int>(std::min(y0, y1)),
         static_cast<int>(std::abs(x1 - x0)), static_cast<int>(std::abs(y1 - y0))};
 
-    SDL_Rect texture_rect = state.texture_sprite.rect();
+    SDL_Rect texture_rect = _state.texture_sprite.rect();
 
     SDL_Rect intersection_world;
     if (SDL_IntersectRect(&selection_world_rect, &texture_rect, &intersection_world) == SDL_FALSE) {
@@ -187,7 +193,7 @@ void Viewport::process_selection(core::State& state) {
     if (intersection_world.w > 0 && intersection_world.h > 0) {
         void* pixels;
         int pitch;
-        auto texture = state.texture_sprite.texture();
+        auto texture = _state.texture_sprite.texture();
 
         if (SDL_LockTexture(texture->get(), &intersection_world, &pixels, &pitch) < 0) {
             core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
@@ -207,7 +213,7 @@ void Viewport::process_selection(core::State& state) {
             std::vector<std::vector<cv::Point>> contours;
             cv::findContours(thresholded, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-            state.frames.clear();
+            _state.frames.clear();
             for (const auto& contour : contours) {
                 cv::Rect bounding_rect = cv::boundingRect(contour);
 
@@ -215,7 +221,7 @@ void Viewport::process_selection(core::State& state) {
                                     bounding_rect.y + intersection_world.y, bounding_rect.width,
                                     bounding_rect.height};
 
-                state.frames.push_back(frame_rect);
+                _state.frames.push_back(frame_rect);
             }
         } catch (const std::exception& ex) {
             core::Logger::error("Failed to process the selected area: %s", ex.what());
@@ -227,10 +233,11 @@ void Viewport::process_selection(core::State& state) {
 
 // Rendering methods
 
-void Viewport::render_texture(core::State& state) {
-    if (state.texture_sprite.texture() != nullptr) {
-        state.texture_sprite.render(_renderer.get(), _zoom_state.current_scale,
-                                    _pan_state.current_offset.x, _pan_state.current_offset.y);
+void Viewport::render_texture() {
+    if (_state.texture_sprite.texture() != nullptr) {
+        _state.texture_sprite.render(_renderer.get(), _state.zoom_state.current_scale,
+                                     _state.pan_state.current_offset.x,
+                                     _state.pan_state.current_offset.y);
     } else {
         render_placeholder_text();
     }
@@ -262,10 +269,10 @@ void Viewport::render_placeholder_text() {
 
 void Viewport::render_selection_rect() {
     // Render selection rectangle in screen coordinates
-    int start_x = static_cast<int>(_mouse_state.start_pos.x);
-    int start_y = static_cast<int>(_mouse_state.start_pos.y);
-    int current_x = static_cast<int>(_mouse_state.current_pos.x);
-    int current_y = static_cast<int>(_mouse_state.current_pos.y);
+    int start_x = static_cast<int>(_state.mouse_state.start_pos.x);
+    int start_y = static_cast<int>(_state.mouse_state.start_pos.y);
+    int current_x = static_cast<int>(_state.mouse_state.current_pos.x);
+    int current_y = static_cast<int>(_state.mouse_state.current_pos.y);
 
     _selection_rect = {std::min(start_x, current_x), std::min(start_y, current_y),
                        std::abs(current_x - start_x), std::abs(current_y - start_y)};
@@ -276,16 +283,16 @@ void Viewport::render_selection_rect() {
     SDL_RenderFillRect(_renderer.get(), &_selection_rect);
 }
 
-void Viewport::render_grid_background(core::State& state) {
+void Viewport::render_grid_background() {
     SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
 
     float scaled_grid_cell_size =
-        std::max(state.viewport_grid_cell_size * _zoom_state.current_scale, 1.0f);
+        std::max(_state.viewport_grid_cell_size * _state.zoom_state.current_scale, 1.0f);
 
-    float offset_x =
-        fmod(_pan_state.current_offset.x * _zoom_state.current_scale, scaled_grid_cell_size);
-    float offset_y =
-        fmod(_pan_state.current_offset.y * _zoom_state.current_scale, scaled_grid_cell_size);
+    float offset_x = fmod(_state.pan_state.current_offset.x * _state.zoom_state.current_scale,
+                          scaled_grid_cell_size);
+    float offset_y = fmod(_state.pan_state.current_offset.y * _state.zoom_state.current_scale,
+                          scaled_grid_cell_size);
 
     int num_vertical_lines =
         static_cast<int>(std::ceil(_viewport_size.x / scaled_grid_cell_size)) + 1;
@@ -315,10 +322,12 @@ void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
     for (const SDL_Rect& frame : frames) {
         // Transform frame coordinates from world space to screen space
         SDL_Rect render_frame_rect{
-            static_cast<int>((frame.x + _pan_state.current_offset.x) * _zoom_state.current_scale),
-            static_cast<int>((frame.y + _pan_state.current_offset.y) * _zoom_state.current_scale),
-            static_cast<int>(frame.w * _zoom_state.current_scale),
-            static_cast<int>(frame.h * _zoom_state.current_scale),
+            static_cast<int>((frame.x + _state.pan_state.current_offset.x) *
+                             _state.zoom_state.current_scale),
+            static_cast<int>((frame.y + _state.pan_state.current_offset.y) *
+                             _state.zoom_state.current_scale),
+            static_cast<int>(frame.w * _state.zoom_state.current_scale),
+            static_cast<int>(frame.h * _state.zoom_state.current_scale),
         };
         SDL_RenderDrawRect(_renderer.get(), &render_frame_rect);
     }
@@ -326,11 +335,11 @@ void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
 
 // Utility methods
 
-void Viewport::handle_viewport_click(float x, float y, core::State& state) {
-    float world_x = (x / _zoom_state.current_scale) - _pan_state.current_offset.x;
-    float world_y = (y / _zoom_state.current_scale) - _pan_state.current_offset.y;
+void Viewport::handle_viewport_click(float x, float y) {
+    float world_x = (x / _state.zoom_state.current_scale) - _state.pan_state.current_offset.x;
+    float world_y = (y / _state.zoom_state.current_scale) - _state.pan_state.current_offset.y;
 
-    auto& sprite = state.texture_sprite;
+    auto& sprite = _state.texture_sprite;
     SDL_Rect rect = sprite.rect();
 
     float texture_x = world_x - rect.x;
@@ -342,27 +351,26 @@ void Viewport::handle_viewport_click(float x, float y, core::State& state) {
         SDL_Color pixel_color = get_texture_pixel_color(static_cast<int>(texture_x),
                                                         static_cast<int>(texture_y), sprite);
 
-        if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) && !_mouse_state.is_panning) {
+        if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) && !_state.mouse_state.is_panning) {
             swap_texture_color(pixel_color,
                                SDL_Color{
-                                   static_cast<Uint8>(state.replacement_color[0] * 255),
-                                   static_cast<Uint8>(state.replacement_color[1] * 255),
-                                   static_cast<Uint8>(state.replacement_color[2] * 255),
-                                   static_cast<Uint8>(state.replacement_color[3] * 255),
-                               },
-                               state);
+                                   static_cast<Uint8>(_state.replacement_color[0] * 255),
+                                   static_cast<Uint8>(_state.replacement_color[1] * 255),
+                                   static_cast<Uint8>(_state.replacement_color[2] * 255),
+                                   static_cast<Uint8>(_state.replacement_color[3] * 255),
+                               });
         }
     } else {
         sprite.set_selected(false);
     }
 }
 
-void Viewport::swap_texture_color(const SDL_Color& from, const SDL_Color& to, core::State& state) {
-    auto texture = state.texture_sprite.texture();
+void Viewport::swap_texture_color(const SDL_Color& from, const SDL_Color& to) {
+    auto texture = _state.texture_sprite.texture();
     void* pixels;
     int pitch;
 
-    if (SDL_LockTexture(state.texture_sprite.texture()->get(), nullptr, &pixels, &pitch) < 0) {
+    if (SDL_LockTexture(_state.texture_sprite.texture()->get(), nullptr, &pixels, &pitch) < 0) {
         core::Logger::error("Failed to lock the texture to remove the background: %s",
                             SDL_GetError());
         return;
@@ -391,7 +399,7 @@ void Viewport::swap_texture_color(const SDL_Color& from, const SDL_Color& to, co
     core::Logger::info("Replaced the color (%d, %d, %d, %d) with the color (%d, %d, %d, %d)",
                        from.r, from.g, from.b, from.a, to.r, to.g, to.b, to.a);
 
-    SDL_UnlockTexture(state.texture_sprite.texture()->get());
+    SDL_UnlockTexture(_state.texture_sprite.texture()->get());
     SDL_FreeFormat(pixel_format);
 }
 

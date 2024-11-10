@@ -116,13 +116,14 @@ void Application::init_fonts() {
 void Application::init_state() {}
 
 void Application::init_components() {
-    _ui_components.emplace("Viewport",
-                           std::make_unique<components::Viewport>(_renderer, _resource_manager));
-    _ui_components.emplace("Console", std::make_unique<components::Console>());
-    _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_renderer));
+    _ui_components.emplace(
+        "Viewport", std::make_unique<components::Viewport>(_state, _renderer, _resource_manager));
+    _ui_components.emplace("Console", std::make_unique<components::Console>(_state));
+    _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_state, _renderer));
     _ui_components.emplace("Project",
-                           std::make_unique<components::Project>(_resource_manager, _state));
-    _ui_components.emplace("Animation Preview", std::make_unique<components::AnimationPreview>());
+                           std::make_unique<components::Project>(_state, _resource_manager));
+    _ui_components.emplace("Animation Preview",
+                           std::make_unique<components::AnimationPreview>(_state));
 }
 
 void Application::cleanup() {
@@ -153,7 +154,7 @@ void Application::handle_events() {
             const char *dropped_filedir = event.drop.file;
 
             ((components::Viewport *)_ui_components["Viewport"].get())
-                ->notify_dropped_file(_state, dropped_filedir);
+                ->notify_dropped_file(dropped_filedir);
 
             SDL_free((void *)dropped_filedir);
         }
@@ -180,7 +181,7 @@ void Application::handle_events() {
 
 void Application::update() {
     for (auto &[name, component] : _ui_components) {
-        component->update(_state);
+        component->update();
     }
 }
 
@@ -219,7 +220,7 @@ void Application::render() {
     }
 
     for (auto &[name, component] : _ui_components) {
-        component->render(_state);
+        component->render();
     }
 
     {

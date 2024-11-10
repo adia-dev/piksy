@@ -9,10 +9,11 @@
 
 namespace piksy {
 namespace components {
+AnimationPreview::AnimationPreview(core::State& state) : UIComponent(state) {}
 
-void AnimationPreview::update(core::State& state) {}
+void AnimationPreview::update() {}
 
-void AnimationPreview::render(core::State& state) {
+void AnimationPreview::render() {
     ImGui::Begin("Animation Preview");
 
     ImGui::End();

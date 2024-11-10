@@ -4,14 +4,16 @@
 
 #include <components/ui_component.hpp>
 #include <core/logger.hpp>
+#include <core/state.hpp>
 
 namespace piksy {
 namespace components {
 
 class Console : public UIComponent {
    public:
-    void update(core::State& state) override;
-    void render(core::State& state) override;
+    explicit Console(core::State& state);
+    void update() override;
+    void render() override;
 
    private:
     ImGuiTextFilter _filter;

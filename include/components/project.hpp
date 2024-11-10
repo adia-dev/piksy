@@ -13,10 +13,10 @@ namespace components {
 
 class Project : public UIComponent {
    public:
-    explicit Project(managers::ResourceManager& resource_manager, core::State& state);
+    explicit Project(core::State& state, managers::ResourceManager& resource_manager);
 
-    void update(core::State& state) override;
-    void render(core::State& state) override;
+    void update() override;
+    void render() override;
 
    private:
     struct DirectoryEntry {
@@ -26,10 +26,10 @@ class Project : public UIComponent {
         std::vector<DirectoryEntry> children;
     };
 
-    bool try_select_texture(const std::filesystem::path& file_path, core::State& state);
-    void render_file_explorer(core::State& state);
+    bool try_select_texture(const std::filesystem::path& file_path);
+    void render_file_explorer();
     void build_directory_cache(const std::filesystem::path& root_path);
-    void render_directory_entries(std::vector<DirectoryEntry>& entries, core::State& state);
+    void render_directory_entries(std::vector<DirectoryEntry>& entries);
 
     managers::ResourceManager& _resource_manager;
     std::map<std::string, bool> _directory_open_state;

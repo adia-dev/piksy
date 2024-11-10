@@ -2,38 +2,37 @@
 
 #include <components/project.hpp>
 #include <core/logger.hpp>
+#include <core/state.hpp>
 #include <filesystem>
 #include <managers/resource_manager.hpp>
-
-#include "core/state.hpp"
 
 namespace fs = std::filesystem;
 
 namespace piksy {
 namespace components {
 
-Project::Project(managers::ResourceManager& resource_manager, core::State& state)
-    : _resource_manager(resource_manager) {
-    build_directory_cache(state.current_path);
+Project::Project(core::State& state, managers::ResourceManager& resource_manager)
+    : UIComponent(state), _resource_manager(resource_manager) {
+    build_directory_cache(_state.current_path);
 }
 
-void Project::update(core::State& state) {}
+void Project::update() {}
 
-void Project::render(core::State& state) {
+void Project::render() {
     ImGui::Begin("Project");
-    render_file_explorer(state);
+    render_file_explorer();
     ImGui::End();
 }
 
-void Project::render_directory_entries(std::vector<DirectoryEntry>& entries, core::State& state) {
+void Project::render_directory_entries(std::vector<DirectoryEntry>& entries) {
     for (auto& entry : entries) {
         const std::string& name = entry.path.filename().string();
         if (entry.is_directory) {
             if (ImGui::Selectable(("##" + entry.path.string() + "/").c_str(), entry.is_open,
                                   ImGuiSelectableFlags_DontClosePopups)) {
                 if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-                    state.current_path = entry.path;
-                    build_directory_cache(state.current_path);
+                    _state.current_path = entry.path;
+                    build_directory_cache(_state.current_path);
                     return;
                 } else {
                     entry.is_open = !entry.is_open;
@@ -44,7 +43,7 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries, cor
             if (entry.is_open) {
                 ImGui::TextColored({0.49f, 1.0f, 0.83f, 1.0f}, "v %s/", name.c_str());
                 ImGui::Indent();
-                render_directory_entries(entry.children, state);
+                render_directory_entries(entry.children);
                 ImGui::Unindent();
             } else {
                 ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "> %s/", name.c_str());
@@ -52,7 +51,7 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries, cor
         } else {
             if (ImGui::Selectable(("##" + entry.path.string()).c_str(), false,
                                   ImGuiSelectableFlags_DontClosePopups)) {
-                try_select_texture(entry.path, state);
+                try_select_texture(entry.path);
             }
             ImGui::SameLine();
             ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "%s", name.c_str());
@@ -60,35 +59,35 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries, cor
     }
 }
 
-void Project::render_file_explorer(core::State& state) {
+void Project::render_file_explorer() {
     static ImGuiTextFilter filter;
     filter.Draw("Filter");
 
     ImGui::Separator();
 
-    ImGui::Text("Current Path: %s", state.current_path.string().c_str());
+    ImGui::Text("Current Path: %s", _state.current_path.string().c_str());
 
-    if (state.current_path.has_parent_path() && ImGui::Button("..")) {
-        if (state.current_path.has_parent_path()) {
-            state.current_path = state.current_path.parent_path();
-            build_directory_cache(state.current_path);
+    if (_state.current_path.has_parent_path() && ImGui::Button("..")) {
+        if (_state.current_path.has_parent_path()) {
+            _state.current_path = _state.current_path.parent_path();
+            build_directory_cache(_state.current_path);
         }
     }
 
     if (ImGui::Button("Reload")) {
-        build_directory_cache(state.current_path);
+        build_directory_cache(_state.current_path);
     }
 
     ImGui::Separator();
 
     ImGui::BeginChild("File Browser", ImVec2(0, 0), false);
-    render_directory_entries(_directory_cache, state);
+    render_directory_entries(_directory_cache);
     ImGui::EndChild();
 }
 
-bool Project::try_select_texture(const std::filesystem::path& file_path, core::State& state) {
+bool Project::try_select_texture(const std::filesystem::path& file_path) {
     try {
-        state.texture_sprite.set_texture(_resource_manager.get_texture(file_path.string()));
+        _state.texture_sprite.set_texture(_resource_manager.get_texture(file_path.string()));
         return true;
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());

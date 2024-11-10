@@ -15,55 +15,36 @@ namespace components {
 
 class Viewport : public UIComponent {
    public:
-    explicit Viewport(rendering::Renderer& renderer, managers::ResourceManager& resource_manager);
+    explicit Viewport(core::State& state, rendering::Renderer& renderer,
+                      managers::ResourceManager& resource_manager);
     ~Viewport();
 
-    void update(core::State& state) override;
-    void render(core::State& state) override;
+    void update() override;
+    void render() override;
 
-    void notify_dropped_file(core::State& state, const std::string& dropped_file_path);
+    void notify_dropped_file(const std::string& dropped_file_path);
 
    private:
     // Processing methods
-    void handle_mouse_input(core::State& state);
+    void handle_mouse_input();
     void process_zoom();
     void process_panning();
     void update_zoom();
     void update_pan();
-    void process_selection(core::State& state);
+    void process_selection();
 
     // Rendering methods
     void create_render_texture(int width, int height);
     void render_placeholder_text();
-    void render_texture(core::State& state);
-    void render_grid_background(core::State& state);
+    void render_texture();
+    void render_grid_background();
     void render_selection_rect();
     void render_frames(const std::vector<SDL_Rect>& frames) const;
 
     // Utility methods
-    void handle_viewport_click(float x, float y, core::State& state);
+    void handle_viewport_click(float x, float y);
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
-    void swap_texture_color(const SDL_Color& from, const SDL_Color& to, core::State& state);
-
-    // State structures
-    struct MouseState {
-        ImVec2 start_pos;
-        ImVec2 current_pos;
-        bool is_pressed = false;
-        bool is_panning = false;
-    };
-
-    struct ZoomState {
-        float current_scale = 1.0f;
-        float target_scale = 1.0f;
-        float zoom_speed = 0.1f;
-    };
-
-    struct PanState {
-        ImVec2 current_offset;
-        ImVec2 target_offset;
-        float pan_speed = 0.7f;
-    };
+    void swap_texture_color(const SDL_Color& from, const SDL_Color& to);
 
     rendering::Renderer& _renderer;
     managers::ResourceManager& _resource_manager;
@@ -71,10 +52,6 @@ class Viewport : public UIComponent {
 
     ImVec2 _viewport_size;
     SDL_Rect _selection_rect;
-
-    MouseState _mouse_state;
-    ZoomState _zoom_state;
-    PanState _pan_state;
 };
 }  // namespace components
 }  // namespace piksy

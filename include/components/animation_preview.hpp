@@ -6,13 +6,16 @@
 #include <core/logger.hpp>
 #include <rendering/renderer.hpp>
 
+#include "core/state.hpp"
+
 namespace piksy {
 namespace components {
 
 class AnimationPreview : public UIComponent {
    public:
-    void update(core::State& state) override;
-    void render(core::State& state) override;
+    explicit AnimationPreview(core::State& state);
+    void update() override;
+    void render() override;
 
    private:
     float _last_frame_time = 0.0f;
