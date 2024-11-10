@@ -15,6 +15,7 @@
 #include <core/state.hpp>
 #include <managers/resource_manager.hpp>
 #include <memory>
+#include <string>
 
 #include "SDL_render.h"
 

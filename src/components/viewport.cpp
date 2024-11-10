@@ -218,8 +218,15 @@ void Viewport::process_selection() {
             cv::Mat thresholded;
             cv::threshold(mat_gray, thresholded, threshold_value, 255, cv::THRESH_BINARY);
 
+            int dilation_size = 2;  // TODO: Make this dynamic
+            cv::Mat element = cv::getStructuringElement(
+                cv::MORPH_RECT, cv::Size(2 * dilation_size + 1, 2 * dilation_size + 1),
+                cv::Point(dilation_size, dilation_size));
+            cv::Mat dilated;
+            cv::dilate(thresholded, dilated, element);
+
             std::vector<std::vector<cv::Point>> contours;
-            cv::findContours(thresholded, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+            cv::findContours(dilated, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
             _state.frames.clear();
             for (const auto& contour : contours) {
@@ -239,7 +246,6 @@ void Viewport::process_selection() {
         SDL_UnlockTexture(texture->get());
     }
 }
-
 
 void Viewport::render_texture() {
     if (_state.texture_sprite.texture() != nullptr) {
@@ -344,7 +350,6 @@ void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
     }
 }
 
-
 void Viewport::handle_viewport_click(float x, float y) {
     float world_x = (x / _state.zoom_state.current_scale) - _state.pan_state.current_offset.x;
     float world_y = (y / _state.zoom_state.current_scale) - _state.pan_state.current_offset.y;
@@ -427,8 +432,7 @@ SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprit
     SDL_QueryTexture(texture, &format, nullptr, nullptr, nullptr);
     SDL_PixelFormat* pixel_format = SDL_AllocFormat(format);
 
-    Uint8* pixel_ptr =
-        static_cast<Uint8*>(pixels) + y * pitch + x * 4;  
+    Uint8* pixel_ptr = static_cast<Uint8*>(pixels) + y * pitch + x * 4;
     Uint32 pixel_value = *(reinterpret_cast<Uint32*>(pixel_ptr));
 
     SDL_Color color;
