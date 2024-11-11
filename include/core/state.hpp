@@ -121,6 +121,8 @@ struct AnimationState {
     bool is_playing = false;
     float fps = 24.0f;
     int current_frame = 0;
+    float frame_duration = 1.0f / fps;
+    float timer = 0.0f;
 };
 
 struct ViewportState {
@@ -139,6 +141,9 @@ struct State {
     PanState pan_state;
     AnimationState animation_state;
     ViewportState viewport_state;
+
+    float delta_time;
+    float fps;
 
     // Frames rects from the viewport
     std::vector<SDL_Rect> frames;

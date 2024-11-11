@@ -177,6 +177,16 @@ void Application::handle_events() {
 }
 
 void Application::update() {
+    static Uint64 last_frame_time = SDL_GetPerformanceCounter();
+    Uint64 current_frame_time = SDL_GetPerformanceCounter();
+    float delta_time =
+        (current_frame_time - last_frame_time) / static_cast<float>(SDL_GetPerformanceFrequency());
+    last_frame_time = current_frame_time;
+
+    // Update delta time and fps in the state for global access
+    _state.delta_time = delta_time;
+    _state.fps = 1.0f / delta_time;
+
     for (auto &[name, component] : _ui_components) {
         component->update();
     }

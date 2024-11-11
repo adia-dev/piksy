@@ -179,7 +179,7 @@ void Viewport::process_zoom() {
                        (_state.mouse_state.current_pos.y - _state.mouse_state.start_pos.y);
 
         // TODO: Make the drag y factor a variable
-        if (std::fabs(drag_y * 0.01f) > wheel) {
+        if (std::fabs(drag_y * 0.01f) > std::fabs(wheel)) {
             zoom_accel = drag_y * 0.01f;
         }
     }

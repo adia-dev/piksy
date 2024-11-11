@@ -13,12 +13,8 @@ class AnimationPreview : public UIComponent {
     void render() override;
 
    private:
-    void render_controls();
-    void render_frames();
-    void render_frame_thumbnails();
-    void render_frame_list();
     void adjust_pan_and_zoom_to_frame(int frame_index);
-
+    void draw_background_grid(const ImVec2& pos, const ImVec2& size) const;
     void delete_frame(size_t frame_index);
 
    private:

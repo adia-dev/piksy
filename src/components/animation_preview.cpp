@@ -1,8 +1,9 @@
-
 #include <imgui.h>
 
 #include <components/animation_preview.hpp>
 #include <core/logger.hpp>
+#include <cstdint>
+#include <cstdio>
 
 namespace piksy {
 namespace components {
@@ -10,66 +11,182 @@ namespace components {
 AnimationPreview::AnimationPreview(core::State& state) : UIComponent(state) {}
 
 void AnimationPreview::update() {
-    // Update logic can be added here if needed
+    if (!_state.animation_state.is_playing || _state.frames.empty()) return;
+
+    _state.animation_state.timer += _state.delta_time;
+
+    if (_state.animation_state.timer >= _state.animation_state.frame_duration) {
+        _state.animation_state.timer -= _state.animation_state.frame_duration;
+        _state.animation_state.current_frame =
+            (_state.animation_state.current_frame + 1) % _state.frames.size();
+    }
 }
 
 void AnimationPreview::render() {
-    ImGui::Begin("Animation Preview");
     auto texture = _state.texture_sprite.texture();
-
-    if (texture == nullptr) {
+    if (!texture) {
         ImGui::Text("Please select a texture and select some frames to visualize the preview.");
-        ImGui::End();
         return;
     }
 
-    render_controls();
+    ImGui::Begin("Animation Controls", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
-    if (_state.frames.empty()) {
-        ImGui::Text("Please select an area of your texture to extract frames for animation.");
-        ImGui::End();
-        return;
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::DragFloat("##FPS", &_state.animation_state.fps, 1.0f, 1.0f, 60.0f, "%.0f FPS")) {
+        _state.animation_state.frame_duration = 1.0f / _state.animation_state.fps;
     }
 
-    render_frames();
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 100) / 2);
 
-    ImGui::End();
-}
-
-void AnimationPreview::render_controls() {
-    ImGui::Text("Animation Controls");
-    ImGui::Separator();
-
-    if (ImGui::Button(_state.animation_state.is_playing ? "Pause" : "Play")) {
+    if (ImGui::Button(ICON_FA_BACKWARD, ImVec2(20, 20))) {
+        _state.animation_state.current_frame = 0;
+    }
+    ImGui::SameLine(0, 4);
+    if (ImGui::Button(ICON_FA_STEP_BACKWARD, ImVec2(20, 20))) {
+        if (--_state.animation_state.current_frame < 0) _state.animation_state.current_frame = 0;
+    }
+    ImGui::SameLine(0, 4);
+    if (ImGui::Button(_state.animation_state.is_playing ? ICON_FA_PAUSE : ICON_FA_PLAY,
+                      ImVec2(20, 20))) {
         _state.animation_state.is_playing = !_state.animation_state.is_playing;
     }
+    ImGui::SameLine(0, 4);
+    if (ImGui::Button(ICON_FA_STEP_FORWARD, ImVec2(20, 20))) {
+        _state.animation_state.current_frame =
+            (_state.animation_state.current_frame + 1) % _state.frames.size();
+    }
+    ImGui::SameLine(0, 4);
+    if (ImGui::Button(ICON_FA_FAST_FORWARD, ImVec2(20, 20))) {
+        _state.animation_state.current_frame = _state.frames.size() - 1;
+    }
 
-    ImGui::SameLine();
+    ImGui::End();
 
-    float slider_width = 128.0f;
+    if (ImGui::Begin("Frames")) {
+        ImGui::Text("Frames: %zu", _state.frames.size());
+        ImGui::BeginChild("##frames", ImVec2(0, 0), true);
 
-    ImGui::SetNextItemWidth(slider_width);
-    ImGui::SliderFloat("FPS", &_state.animation_state.fps, 1.0f, 60.0f, "%.1f FPS");
+        ImVec2 item_size(60, 60);
+        float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
-    ImGui::SameLine();
+        for (size_t i = 0; i < _state.frames.size(); ++i) {
+            const SDL_Rect& frame = _state.frames[i];
 
-    ImGui::SetNextItemWidth(slider_width);
-    ImGui::SliderFloat("Thumbnail Size", &_frame_display_size, 0.0f, 200.0f, "%.1f");
+            ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
+                          static_cast<float>(frame.y) / texture->height()};
+            ImVec2 uv1 = {static_cast<float>(frame.x + frame.w) / texture->width(),
+                          static_cast<float>(frame.y + frame.h) / texture->height()};
 
-    ImGui::Separator();
+            float aspect_ratio = static_cast<float>(frame.w) / frame.h;
+            ImVec2 display_size = item_size;
+            if (aspect_ratio >= 1.0f) {
+                display_size.y = item_size.x / aspect_ratio;
+                if (display_size.y > item_size.y) {
+                    display_size.y = item_size.y;
+                    display_size.x = item_size.y * aspect_ratio;
+                }
+            } else {
+                display_size.x = item_size.y * aspect_ratio;
+                if (display_size.x > item_size.x) {
+                    display_size.x = item_size.x;
+                    display_size.y = item_size.x / aspect_ratio;
+                }
+            }
+
+            ImVec2 center_offset = {(item_size.x - display_size.x) / 2.0f,
+                                    (item_size.y - display_size.y) / 2.0f};
+
+            ImGui::PushID(static_cast<int>(i));
+
+            ImU32 bg_color = (i == _state.animation_state.current_frame)
+                                 ? IM_COL32(100, 200, 100, 255)
+                                 : IM_COL32(80, 80, 80, 200);
+
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+            ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+            draw_list->AddRectFilled(cursor_pos,
+                                     {cursor_pos.x + item_size.x, cursor_pos.y + item_size.y},
+                                     bg_color, 4.0f);
+
+            if (ImGui::InvisibleButton((std::string("##") + std::to_string(i)).c_str(),
+                                       item_size)) {
+                _state.animation_state.current_frame = i;
+                adjust_pan_and_zoom_to_frame(i);
+            }
+
+            draw_list->AddImage((ImTextureID)(intptr_t)texture->get(),
+                                {cursor_pos.x + center_offset.x, cursor_pos.y + center_offset.y},
+                                {cursor_pos.x + center_offset.x + display_size.x,
+                                 cursor_pos.y + center_offset.y + display_size.y},
+                                uv0, uv1);
+
+            ImGui::PopID();
+
+            float last_item_x2 = ImGui::GetItemRectMax().x;
+            if (i < _state.frames.size() - 1 && last_item_x2 + item_size.x < window_visible_x2) {
+                ImGui::SameLine();
+            }
+        }
+
+        ImGui::EndChild();
+        ImGui::End();
+    }
+
+    if (ImGui::Begin("Current Frame")) {
+        if (_state.frames.empty()) {
+            ImGui::Text("No frame to preview");
+            ImGui::End();
+        } else {
+            const SDL_Rect& frame = _state.frames[_state.animation_state.current_frame];
+            ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
+                          static_cast<float>(frame.y) / texture->height()};
+            ImVec2 uv1 = {static_cast<float>(frame.x + frame.w) / texture->width(),
+                          static_cast<float>(frame.y + frame.h) / texture->height()};
+
+            ImVec2 available_space = ImGui::GetContentRegionAvail();
+            float aspect_ratio = static_cast<float>(frame.w) / frame.h;
+            ImVec2 display_size = available_space;
+
+            if (aspect_ratio >= 1.0f) {
+                display_size.y = available_space.x / aspect_ratio;
+                if (display_size.y > available_space.y) {
+                    display_size.y = available_space.y;
+                    display_size.x = available_space.y * aspect_ratio;
+                }
+            } else {
+                display_size.x = available_space.y * aspect_ratio;
+                if (display_size.x > available_space.x) {
+                    display_size.x = available_space.x;
+                    display_size.y = available_space.x / aspect_ratio;
+                }
+            }
+
+            ImVec2 center_offset = {(available_space.x - display_size.x) / 2.0f,
+                                    (available_space.y - display_size.y) / 2.0f};
+            ImGui::SetCursorPos({ImGui::GetCursorPos().x + center_offset.x,
+                                 ImGui::GetCursorPos().y + center_offset.y});
+
+            draw_background_grid(ImGui::GetItemRectMin(), available_space);
+
+            ImGui::Image((ImTextureID)(intptr_t)texture->get(), display_size, uv0, uv1);
+            ImGui::End();
+        }
+    }
 }
 
-void AnimationPreview::render_frames() {
-    if (_frame_display_size > 32.0f) {
-        render_frame_thumbnails();
-    } else {
-        render_frame_list();
+void AnimationPreview::draw_background_grid(const ImVec2& pos, const ImVec2& size) const {
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    const int grid_size = 10;
+
+    for (float x = pos.x - size.y; x < pos.x + size.x; x += grid_size) {
+        draw_list->AddLine(ImVec2(x, pos.y), ImVec2(x + size.y, pos.y + size.y),
+                           IM_COL32(120, 120, 120, 80));
     }
 }
 
 void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
     const SDL_Rect& frame = _state.frames[frame_index];
-
     float desired_scale = 4.0f;
     _state.zoom_state.target_scale = desired_scale;
 
@@ -83,212 +200,6 @@ void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
 
     _state.pan_state.target_offset.x = pan_offset_x;
     _state.pan_state.target_offset.y = pan_offset_y;
-}
-
-void AnimationPreview::render_frame_thumbnails() {
-    auto texture = _state.texture_sprite.texture();
-
-    ImGui::BeginChild("FrameScroller", ImVec2(0, _frame_display_size + 50), false,
-                      ImGuiWindowFlags_HorizontalScrollbar);
-
-    const float frame_padding = 5.0f;
-    ImGuiStyle& style = ImGui::GetStyle();
-    float old_item_spacing_x = style.ItemSpacing.x;
-    style.ItemSpacing.x = frame_padding;
-
-    int frame_count = static_cast<int>(_state.frames.size());
-    for (int i = 0; i < frame_count; ++i) {
-        SDL_Rect& frame = _state.frames[i];
-
-        float aspect_ratio = static_cast<float>(frame.w) / frame.h;
-        ImVec2 button_size(_frame_display_size - i, _frame_display_size - i);
-
-        ImVec2 display_size;
-        if (aspect_ratio >= 1.0f) {
-            display_size.x = _frame_display_size;
-            display_size.y = _frame_display_size / aspect_ratio;
-        } else {
-            display_size.x = _frame_display_size * aspect_ratio;
-            display_size.y = _frame_display_size;
-        }
-
-        ImGui::BeginGroup();
-
-        ImVec2 cursor_pos = ImGui::GetCursorPos();
-        ImVec2 image_pos = ImGui::GetCursorScreenPos();
-        image_pos.x += (button_size.x - display_size.x) * 0.5f;
-        image_pos.y += (button_size.y - display_size.y) * 0.5f;
-
-        ImGui::PushID(i);
-        if (ImGui::InvisibleButton("frame_button", button_size)) {
-            _state.animation_state.current_frame = i;
-            _state.animation_state.is_playing = false;
-            adjust_pan_and_zoom_to_frame(i);
-        }
-
-        if (ImGui::BeginPopupContextItem("ItemContextMenu")) {
-            if (ImGui::MenuItem("Delete")) {
-                delete_frame(i);
-            }
-            ImGui::EndPopup();
-        }
-
-        if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload("FRAME_PAYLOAD", &i, sizeof(int));
-            ImGui::Text("Move Frame %d", i + 1);
-
-            ImTextureID tex_id = (ImTextureID)(intptr_t)texture->get();
-
-            ImVec2 uv0(static_cast<float>(frame.x) / texture->width(),
-                       static_cast<float>(frame.y) / texture->height());
-            ImVec2 uv1(static_cast<float>(frame.x + frame.w) / texture->width(),
-                       static_cast<float>(frame.y + frame.h) / texture->height());
-
-            ImGui::Image(tex_id, {100, 100}, uv0, uv1);
-
-            ImGui::EndDragDropSource();
-        }
-
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FRAME_PAYLOAD")) {
-                int src_index = *(const int*)payload->Data;
-                if (src_index != i) {
-                    std::swap(_state.frames[src_index], _state.frames[i]);
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-        ImGui::PopID();
-
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        ImTextureID tex_id = (ImTextureID)(intptr_t)texture->get();
-
-        ImVec2 uv0(static_cast<float>(frame.x) / texture->width(),
-                   static_cast<float>(frame.y) / texture->height());
-        ImVec2 uv1(static_cast<float>(frame.x + frame.w) / texture->width(),
-                   static_cast<float>(frame.y + frame.h) / texture->height());
-
-        draw_list->AddImage(tex_id, image_pos,
-                            ImVec2(image_pos.x + display_size.x, image_pos.y + display_size.y), uv0,
-                            uv1);
-
-        if (_state.animation_state.current_frame == i) {
-            draw_list->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
-                               IM_COL32(0, 255, 0, 255), 0.0f, 0, 2.0f);
-        }
-
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::Text("Frame %d", i + 1);
-            ImGui::Text("Size: %dx%d", frame.w, frame.h);
-            ImGui::EndTooltip();
-        }
-
-        ImVec2 label_pos = ImVec2(cursor_pos.x, cursor_pos.y + button_size.y + 3.0f);
-        ImGui::SetCursorPos(label_pos);
-        ImGui::TextWrapped("Frame %d", i + 1);
-
-        ImGui::EndGroup();
-
-        if (i < frame_count - 1) {
-            ImGui::SameLine();
-        }
-    }
-
-    style.ItemSpacing.x = old_item_spacing_x;
-
-    ImGui::EndChild();
-}
-
-void AnimationPreview::render_frame_list() {
-    if (ImGui::BeginTable("FrameListTable", 2, ImGuiTableFlags_Resizable)) {
-        ImGui::TableSetupColumn("Frame List", ImGuiTableColumnFlags_WidthStretch, 0.75f);
-        ImGui::TableSetupColumn("Frame Preview", ImGuiTableColumnFlags_WidthStretch, 0.25f);
-        ImGui::TableNextRow();
-
-        ImGui::TableSetColumnIndex(0);
-        ImGui::BeginChild("FrameList", ImVec2(0, 0), true);
-
-        int frame_count = static_cast<int>(_state.frames.size());
-        for (int i = 0; i < frame_count; ++i) {
-            ImGui::PushID(i);
-            if (ImGui::Selectable(("Frame " + std::to_string(i + 1)).c_str(),
-                                  _state.animation_state.current_frame == i)) {
-                _state.animation_state.current_frame = i;
-                _state.animation_state.is_playing = false;
-                adjust_pan_and_zoom_to_frame(i);
-            }
-
-            if (ImGui::BeginPopupContextItem("ItemContextMenu")) {
-                if (ImGui::MenuItem("Delete")) {
-                    delete_frame(i);
-                }
-                ImGui::EndPopup();
-            }
-
-            if (ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload("FRAME_PAYLOAD", &i, sizeof(int));
-                ImGui::Text("Move Frame %d", i + 1);
-                ImGui::EndDragDropSource();
-            }
-
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FRAME_PAYLOAD")) {
-                    int src_index = *(const int*)payload->Data;
-                    if (src_index != i) {
-                        std::swap(_state.frames[src_index], _state.frames[i]);
-                    }
-                }
-                ImGui::EndDragDropTarget();
-            }
-            ImGui::PopID();
-        }
-
-        ImGui::EndChild();
-
-        ImGui::TableSetColumnIndex(1);
-        ImGui::BeginChild("FramePreview", ImVec2(0, 0), true);
-
-        if (_state.animation_state.current_frame >= 0 &&
-            _state.animation_state.current_frame < _state.frames.size()) {
-            SDL_Rect& frame = _state.frames[_state.animation_state.current_frame];
-            auto texture = _state.texture_sprite.texture();
-
-            if (texture) {
-                float aspect_ratio = static_cast<float>(frame.w) / frame.h;
-                float preview_size = ImGui::GetContentRegionAvail().x;
-                ImVec2 display_size;
-
-                if (aspect_ratio >= 1.0f) {
-                    display_size.x = preview_size;
-                    display_size.y = preview_size / aspect_ratio;
-                } else {
-                    display_size.x = preview_size * aspect_ratio;
-                    display_size.y = preview_size;
-                }
-
-                ImTextureID tex_id = (ImTextureID)(intptr_t)texture->get();
-
-                ImVec2 uv0(static_cast<float>(frame.x) / texture->width(),
-                           static_cast<float>(frame.y) / texture->height());
-                ImVec2 uv1(static_cast<float>(frame.x + frame.w) / texture->width(),
-                           static_cast<float>(frame.y + frame.h) / texture->height());
-
-                float vertical_padding = (ImGui::GetContentRegionAvail().y - display_size.y) * 0.5f;
-                if (vertical_padding > 0.0f) {
-                    ImGui::Dummy(ImVec2(0.0f, vertical_padding));
-                }
-
-                ImGui::Image(tex_id, display_size, uv0, uv1);
-            }
-        } else {
-            ImGui::Text("No frame selected.");
-        }
-
-        ImGui::EndChild();
-
-        ImGui::EndTable();
-    }
 }
 
 void AnimationPreview::delete_frame(size_t frame_index) {
