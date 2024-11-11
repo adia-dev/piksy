@@ -19,6 +19,8 @@ class AnimationPreview : public UIComponent {
     void render_frame_list();
     void adjust_pan_and_zoom_to_frame(int frame_index);
 
+    void delete_frame(size_t frame_index);
+
    private:
     float _frame_display_size = 100.0f;
 };

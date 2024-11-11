@@ -170,15 +170,6 @@ void Application::handle_events() {
             _is_running = false;
         }
 
-        if (event.type == SDL_KEYUP) {
-            switch (event.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                    _is_running = false;
-                default:
-                    break;
-            }
-        }
-
         if (_io->WantCaptureMouse) {
             continue;
         }

@@ -9,11 +9,13 @@
 #include <components/viewport.hpp>
 #include <core/logger.hpp>
 #include <core/state.hpp>
-#include <exception>
 #include <opencv2/opencv.hpp>
 #include <rendering/sprite.hpp>
 #include <utils/dump.hpp>
 #include <utils/maths.hpp>
+#include <vector>
+
+#include "command/frame_extraction_command.hpp"
 
 namespace piksy {
 namespace components {
@@ -67,6 +69,21 @@ void Viewport::update() {
     if (_state.mouse_state.is_pressed && !_state.mouse_state.is_panning) {
         process_selection();
     }
+
+    if (ImGui::IsKeyDown(ImGuiKey_Backspace)) {
+        if (!_state.selected_frames.empty()) {
+            for (size_t i : _state.selected_frames) {
+                if (i < _state.frames.size()) {
+                    _state.frames.erase(_state.frames.begin() + i);
+                }
+            }
+            _state.selected_frames.clear();
+        }
+    }
+
+    if (ImGui::IsKeyDown(ImGuiKey_Escape)) {
+        _state.selected_frames.clear();
+    }
 }
 
 void Viewport::render() {
@@ -75,6 +92,8 @@ void Viewport::render() {
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PopStyleVar();
+
+    render_toolbar();
 
     ImVec2 viewport_size = ImGui::GetContentRegionAvail();
     if (viewport_size.x != _viewport_size.x || viewport_size.y != _viewport_size.y) {
@@ -96,13 +115,18 @@ void Viewport::render() {
         render_selection_rect();
     }
 
-    render_frames(_state.frames);
+    render_frames();
 
     SDL_SetRenderTarget(_renderer.get(), nullptr);
 
     ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
 
-    handle_mouse_input();
+    process_mouse_input();
+
+    render_cursor_hud();
+
+    /* ImGuiAxis toolbar_axis = ImGuiAxis_Y; */
+    /* DockingToolbar("Toolbar", &toolbar_axis); */
 
     ImGui::End();
 }
@@ -116,7 +140,7 @@ void Viewport::notify_dropped_file(const std::string& dropped_file_path) {
     }
 }
 
-void Viewport::handle_mouse_input() {
+void Viewport::process_mouse_input() {
     if (ImGui::IsWindowHovered()) {
         ImVec2 mouse_pos = ImGui::GetMousePos();
         ImVec2 image_pos = ImGui::GetItemRectMin();
@@ -126,14 +150,14 @@ void Viewport::handle_mouse_input() {
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             _state.mouse_state.start_pos = _state.mouse_state.current_pos;
             _state.mouse_state.is_pressed = true;
-            handle_viewport_click(_state.mouse_state.current_pos.x,
-                                  _state.mouse_state.current_pos.y);
+            handle_click(_state.mouse_state.current_pos.x, _state.mouse_state.current_pos.y);
         }
 
         _state.mouse_state.is_pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
         process_zoom();
         process_panning();
+
     } else {
         _state.mouse_state.is_pressed = false;
         _state.mouse_state.is_panning = false;
@@ -149,7 +173,8 @@ void Viewport::process_zoom() {
 }
 
 void Viewport::process_panning() {
-    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && _state.mouse_state.is_pressed) {
+    if (_state.mouse_state.is_pressed &&
+        (_state.current_tool == core::Tool::PAN || ImGui::IsKeyDown(ImGuiKey_LeftShift))) {
         ImVec2 delta = {(_state.mouse_state.current_pos.x - _state.mouse_state.start_pos.x) /
                             _state.zoom_state.current_scale,
                         (_state.mouse_state.current_pos.y - _state.mouse_state.start_pos.y) /
@@ -176,8 +201,6 @@ void Viewport::update_pan() {
 }
 
 void Viewport::process_selection() {
-    if (!_state.texture_sprite.texture()) return;
-
     float x0 = (_state.mouse_state.start_pos.x / _state.zoom_state.current_scale) -
                _state.pan_state.current_offset.x;
     float y0 = (_state.mouse_state.start_pos.y / _state.zoom_state.current_scale) -
@@ -191,59 +214,26 @@ void Viewport::process_selection() {
         static_cast<int>(std::min(x0, x1)), static_cast<int>(std::min(y0, y1)),
         static_cast<int>(std::abs(x1 - x0)), static_cast<int>(std::abs(y1 - y0))};
 
-    SDL_Rect texture_rect = _state.texture_sprite.rect();
+    switch (_state.current_tool) {
+        case core::Tool::EXTRACT: {
+            if (!_state.texture_sprite.texture()) return;
 
-    SDL_Rect intersection_world;
-    if (SDL_IntersectRect(&selection_world_rect, &texture_rect, &intersection_world) == SDL_FALSE) {
-        return;
-    }
+            commands::FrameExtractionCommand command(
+                selection_world_rect, _state.texture_sprite.texture(), _state.frames);
+            command.execute();
+        } break;
+        case core::Tool::SELECT: {
+            _state.selected_frames.clear();
 
-    if (intersection_world.w > 0 && intersection_world.h > 0) {
-        void* pixels;
-        int pitch;
-        auto texture = _state.texture_sprite.texture();
-
-        if (SDL_LockTexture(texture->get(), &intersection_world, &pixels, &pitch) < 0) {
-            core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
-            return;
-        }
-
-        try {
-            cv::Mat mat(intersection_world.h, intersection_world.w, CV_8UC4, pixels, pitch);
-
-            cv::Mat mat_gray;
-            cv::cvtColor(mat, mat_gray, cv::COLOR_RGBA2GRAY);
-
-            int threshold_value = 1;
-            cv::Mat thresholded;
-            cv::threshold(mat_gray, thresholded, threshold_value, 255, cv::THRESH_BINARY);
-
-            int dilation_size = 2;  // TODO: Make this dynamic
-            cv::Mat element = cv::getStructuringElement(
-                cv::MORPH_RECT, cv::Size(2 * dilation_size + 1, 2 * dilation_size + 1),
-                cv::Point(dilation_size, dilation_size));
-            cv::Mat dilated;
-            cv::dilate(thresholded, dilated, element);
-
-            std::vector<std::vector<cv::Point>> contours;
-            cv::findContours(dilated, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-            _state.frames.clear();
-            for (const auto& contour : contours) {
-                cv::Rect bounding_rect = cv::boundingRect(contour);
-
-                SDL_Rect frame_rect{bounding_rect.x + intersection_world.x,
-                                    bounding_rect.y + intersection_world.y, bounding_rect.width,
-                                    bounding_rect.height};
-
-                _state.frames.push_back(frame_rect);
+            for (size_t i = 0; i < _state.frames.size(); ++i) {
+                const SDL_Rect& frame = _state.frames[i];
+                if (SDL_HasIntersection(&frame, &selection_world_rect)) {
+                    _state.selected_frames.insert(i);
+                }
             }
-            // TODO: Sort the frames by their position, based on the selection rect
-        } catch (const std::exception& ex) {
-            core::Logger::error("Failed to process the selected area: %s", ex.what());
-        }
-
-        SDL_UnlockTexture(texture->get());
+        } break;
+        default:
+            break;
     }
 }
 
@@ -254,6 +244,29 @@ void Viewport::render_texture() {
                                      _state.pan_state.current_offset.y);
     } else {
         render_placeholder_text();
+    }
+}
+
+void Viewport::render_cursor_hud() {
+    ImVec2 mouse_pos = ImGui::GetMousePos();
+
+    if (std::fabs(_state.zoom_state.target_scale - _state.zoom_state.current_scale) >= 0.001f) {
+        ImVec2 text_offset(5, -10);
+        ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
+        ImGui::SetCursorScreenPos(text_pos);
+        ImGui::Text("%.2f", _state.zoom_state.current_scale);
+    }
+
+    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) ||
+        (std::fabs(_state.pan_state.current_offset.x - _state.pan_state.target_offset.x) >=
+             0.001f &&
+         std::fabs(_state.pan_state.current_offset.y - _state.pan_state.target_offset.y) >=
+             0.001f)) {
+        ImVec2 text_offset(7, 10);
+        ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
+        ImGui::SetCursorScreenPos(text_pos);
+        ImGui::Text("x: %.2f, y: %.2f", _state.pan_state.current_offset.x,
+                    _state.pan_state.current_offset.y);
     }
 }
 
@@ -329,28 +342,56 @@ void Viewport::render_grid_background() {
     }
 }
 
-void Viewport::render_frames(const std::vector<SDL_Rect>& frames) const {
-    for (size_t i = 0; i < frames.size(); ++i) {
-        const SDL_Rect& frame = frames[i];
+void Viewport::render_frames() const {
+    // Pre-compute colors to reduce redundant operations inside the loop
+    const SDL_Color current_frame_color{206, 2, 65, 155};
+    const SDL_Color selected_frame_color{255, 135, 177, 155};
+    const SDL_Color default_frame_color{135, 235, 177, 155};
+
+    // Pre-compute common scaling factor for efficiency
+    const float scale = _state.zoom_state.current_scale;
+    const ImVec2 offset = _state.pan_state.current_offset;
+
+    // Render loop with reduced computation
+    for (size_t i = 0; i < _state.frames.size(); ++i) {
+        const SDL_Rect& frame = _state.frames[i];
+        SDL_Rect render_frame_rect{static_cast<int>((frame.x + offset.x) * scale),
+                                   static_cast<int>((frame.y + offset.y) * scale),
+                                   static_cast<int>(frame.w * scale),
+                                   static_cast<int>(frame.h * scale)};
+
+        // Set color based on the current context
         if (i == _state.animation_state.current_frame) {
-            SDL_SetRenderDrawColor(_renderer.get(), 206, 2, 65, 155);
+            SDL_SetRenderDrawColor(_renderer.get(), current_frame_color.r, current_frame_color.g,
+                                   current_frame_color.b, current_frame_color.a);
+        } else if (_state.selected_frames.count(i)) {
+            SDL_SetRenderDrawColor(_renderer.get(), selected_frame_color.r, selected_frame_color.g,
+                                   selected_frame_color.b, selected_frame_color.a);
         } else {
-            SDL_SetRenderDrawColor(_renderer.get(), 135, 235, 177, 155);
+            SDL_SetRenderDrawColor(_renderer.get(), default_frame_color.r, default_frame_color.g,
+                                   default_frame_color.b, default_frame_color.a);
         }
 
-        SDL_Rect render_frame_rect{
-            static_cast<int>((frame.x + _state.pan_state.current_offset.x) *
-                             _state.zoom_state.current_scale),
-            static_cast<int>((frame.y + _state.pan_state.current_offset.y) *
-                             _state.zoom_state.current_scale),
-            static_cast<int>(frame.w * _state.zoom_state.current_scale),
-            static_cast<int>(frame.h * _state.zoom_state.current_scale),
-        };
         SDL_RenderDrawRect(_renderer.get(), &render_frame_rect);
     }
 }
 
-void Viewport::handle_viewport_click(float x, float y) {
+void Viewport::handle_background_color_swapping(rendering::Sprite& sprite, float& texture_x,
+                                                float& texture_y) {
+    SDL_Color pixel_color =
+        get_texture_pixel_color(static_cast<int>(texture_x), static_cast<int>(texture_y), sprite);
+
+    if (_state.current_tool == core::Tool::COLOR_SWAP && !_state.mouse_state.is_panning) {
+        swap_texture_color(pixel_color, SDL_Color{
+                                            static_cast<Uint8>(_state.replacement_color[0] * 255),
+                                            static_cast<Uint8>(_state.replacement_color[1] * 255),
+                                            static_cast<Uint8>(_state.replacement_color[2] * 255),
+                                            static_cast<Uint8>(_state.replacement_color[3] * 255),
+                                        });
+    }
+}
+
+void Viewport::handle_click(float x, float y) {
     float world_x = (x / _state.zoom_state.current_scale) - _state.pan_state.current_offset.x;
     float world_y = (y / _state.zoom_state.current_scale) - _state.pan_state.current_offset.y;
 
@@ -363,18 +404,7 @@ void Viewport::handle_viewport_click(float x, float y) {
     if (texture_x >= 0 && texture_x < rect.w && texture_y >= 0 && texture_y < rect.h) {
         sprite.set_selected(true);
 
-        SDL_Color pixel_color = get_texture_pixel_color(static_cast<int>(texture_x),
-                                                        static_cast<int>(texture_y), sprite);
-
-        if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) && !_state.mouse_state.is_panning) {
-            swap_texture_color(pixel_color,
-                               SDL_Color{
-                                   static_cast<Uint8>(_state.replacement_color[0] * 255),
-                                   static_cast<Uint8>(_state.replacement_color[1] * 255),
-                                   static_cast<Uint8>(_state.replacement_color[2] * 255),
-                                   static_cast<Uint8>(_state.replacement_color[3] * 255),
-                               });
-        }
+        handle_background_color_swapping(sprite, texture_x, texture_y);
     } else {
         sprite.set_selected(false);
     }
@@ -442,6 +472,52 @@ SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprit
     SDL_FreeFormat(pixel_format);
 
     return color;
+}
+
+void Viewport::render_toolbar() {
+    // Make toolbar transparent
+    ImGui::PushStyleColor(ImGuiCol_ChildBg,
+                          ImVec4(0.1f, 0.1f, 0.1f, 0.5f));  // Adjust color and transparency
+    ImGui::SetNextWindowBgAlpha(0.5f);  // Set background transparency for the window
+
+    // Create a dockable toolbar with offset
+    ImGui::SetNextWindowPos(ImVec2(15, 15), ImGuiCond_FirstUseEver);    // Offset from the border
+    ImGui::SetNextWindowSize(ImVec2(300, 50), ImGuiCond_FirstUseEver);  // Initial size
+    ImGui::Begin("Toolbar", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 5));
+
+    // Begin a horizontal layout
+    ImGui::BeginGroup();
+
+    // Render the toolbar buttons
+    int num_tools = static_cast<int>(core::Tool::COUNT);
+    for (int tool_idx = 0; tool_idx < num_tools; tool_idx++) {
+        core::Tool tool = static_cast<core::Tool>(tool_idx);
+        const char* label = core::tool_to_string(tool);
+
+        if (tool_idx > 0) ImGui::SameLine();
+
+        if (tool == _state.current_tool) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 125 / 255.0f, 155 / 255.0f, 0.73f));
+            if (ImGui::Button(label)) {
+                _state.current_tool = tool;
+            }
+            ImGui::PopStyleColor();
+        } else {
+            if (ImGui::Button(label)) {
+                _state.current_tool = tool;
+            }
+        }
+    }
+
+    ImGui::EndGroup();
+    ImGui::PopStyleVar(2);
+    ImGui::End();
+    ImGui::PopStyleColor();
 }
 
 }  // namespace components

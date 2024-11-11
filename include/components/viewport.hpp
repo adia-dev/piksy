@@ -10,6 +10,8 @@
 #include <rendering/renderer.hpp>
 #include <vector>
 
+#include "imgui_internal.h"
+
 namespace piksy {
 namespace components {
 
@@ -25,23 +27,32 @@ class Viewport : public UIComponent {
     void notify_dropped_file(const std::string& dropped_file_path);
 
    private:
-    void handle_mouse_input();
+    void create_render_texture(int width, int height);
+
+    void process_mouse_input();
     void process_zoom();
     void process_panning();
-    void update_zoom();
-    void update_pan();
     void process_selection();
 
-    void create_render_texture(int width, int height);
+    void update_zoom();
+    void update_pan();
+
+    void render_cursor_hud();
     void render_placeholder_text();
     void render_texture();
     void render_grid_background();
     void render_selection_rect();
-    void render_frames(const std::vector<SDL_Rect>& frames) const;
+    void render_frames() const;
 
-    void handle_viewport_click(float x, float y);
-    SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
+    // TODO: Move these to commands
+    void handle_background_color_swapping(rendering::Sprite& sprite, float& texture_x,
+                                          float& texture_y);
     void swap_texture_color(const SDL_Color& from, const SDL_Color& to);
+    SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
+
+    void handle_click(float x, float y);
+
+    void render_toolbar();
 
    private:
     rendering::Renderer& _renderer;
@@ -50,6 +61,7 @@ class Viewport : public UIComponent {
 
     ImVec2 _viewport_size;
     SDL_Rect _selection_rect;
+    ImRect _viewport_image_rect;
 };
 }  // namespace components
 }  // namespace piksy

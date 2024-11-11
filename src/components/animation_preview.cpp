@@ -128,7 +128,7 @@ void AnimationPreview::render_frame_thumbnails() {
 
         if (ImGui::BeginPopupContextItem("ItemContextMenu")) {
             if (ImGui::MenuItem("Delete")) {
-                _state.frames.erase(_state.frames.begin() + i);
+                delete_frame(i);
             }
             ImGui::EndPopup();
         }
@@ -221,7 +221,7 @@ void AnimationPreview::render_frame_list() {
 
             if (ImGui::BeginPopupContextItem("ItemContextMenu")) {
                 if (ImGui::MenuItem("Delete")) {
-                    _state.frames.erase(_state.frames.begin() + i);
+                    delete_frame(i);
                 }
                 ImGui::EndPopup();
             }
@@ -291,5 +291,13 @@ void AnimationPreview::render_frame_list() {
     }
 }
 
+void AnimationPreview::delete_frame(size_t frame_index) {
+    if (_state.selected_frames.count(frame_index)) {
+        _state.selected_frames.erase(frame_index);
+    }
+    if (frame_index < _state.frames.size()) {
+        _state.frames.erase(_state.frames.begin() + frame_index);
+    }
+}
 }  // namespace components
 }  // namespace piksy
