@@ -1,10 +1,10 @@
 #pragma once
 
 #include <SDL_rect.h>
+#include <icons/IconsFontAwesome4.h>
 
 #include <core/logger.hpp>
 #include <filesystem>
-#include <functional>
 #include <rendering/sprite.hpp>
 #include <unordered_set>
 
@@ -30,6 +30,40 @@ enum class Tool {
 
 // TODO: Move this the f*ck outta here
 inline const char* tool_to_string(Tool tool) {
+    switch (tool) {
+        case Tool::SELECT:
+            return ICON_FA_HAND_POINTER_O;
+        case Tool::MOVE:
+            return ICON_FA_ARROWS;
+        case Tool::SCALE:
+            return ICON_FA_ARROWS_V;
+        case Tool::ERASE:
+            return ICON_FA_ERASER;
+        case Tool::MEASURE:
+            return ICON_FA_ANGLE_RIGHT;
+        case Tool::SNAP:
+            return ICON_FA_MAGNET;
+        case Tool::PAN:
+            return ICON_FA_PAPER_PLANE_O;
+        case Tool::ZOOM:
+            return ICON_FA_SEARCH;
+        case Tool::COLOR_SWAP:
+            return ICON_FA_TINT;
+        case Tool::BRUSH:
+            return ICON_FA_PAINT_BRUSH;
+        case Tool::EXTRACT:
+            return ICON_FA_SQUARE_O;
+        case Tool::VIEW:
+            return ICON_FA_EYE;
+        case Tool::LASSO_SELECT:
+            return ICON_FA_PENCIL_SQUARE_O;
+        case Tool::COUNT:
+        default:
+            return "Unknown";
+    }
+}
+
+inline const char* tool_to_icon(Tool tool) {
     switch (tool) {
         case Tool::SELECT:
             return "SELECT";

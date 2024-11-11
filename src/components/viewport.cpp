@@ -17,6 +17,8 @@
 #include <utils/maths.hpp>
 #include <vector>
 
+#include "icons/IconsFontAwesome4.h"
+
 namespace piksy {
 namespace components {
 
@@ -271,7 +273,7 @@ void Viewport::render_cursor_hud() {
         ImVec2 text_offset(5, -10);
         ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
         ImGui::SetCursorScreenPos(text_pos);
-        ImGui::Text("%.2f", _state.zoom_state.current_scale);
+        ImGui::Text("%s %.2f", ICON_FA_SEARCH, _state.zoom_state.current_scale);
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
@@ -282,7 +284,7 @@ void Viewport::render_cursor_hud() {
         ImVec2 text_offset(7, 10);
         ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
         ImGui::SetCursorScreenPos(text_pos);
-        ImGui::Text("x: %.2f, y: %.2f", _state.pan_state.current_offset.x,
+        ImGui::Text("%s x: %.2f, y: %.2f", ICON_FA_ARROWS, _state.pan_state.current_offset.x,
                     _state.pan_state.current_offset.y);
     }
 }
@@ -480,12 +482,13 @@ void Viewport::render_toolbar() {
     for (int tool_idx = 0; tool_idx < num_tools; tool_idx++) {
         core::Tool tool = static_cast<core::Tool>(tool_idx);
         const char* label = core::tool_to_string(tool);
+        const char* icon = core::tool_to_icon(tool);
 
         if (tool_idx > 0) ImGui::SameLine();
 
         if (tool == _state.current_tool) {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 125 / 255.0f, 155 / 255.0f, 0.73f));
-            if (ImGui::Button(label)) {
+            if (ImGui::Button((std::string(icon) + " " + label).c_str())) {
                 _state.current_tool = tool;
             }
             ImGui::PopStyleColor();
