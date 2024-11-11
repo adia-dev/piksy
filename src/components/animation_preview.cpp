@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "rendering/frame.hpp"
+
 namespace piksy {
 namespace components {
 
@@ -71,7 +73,7 @@ void AnimationPreview::render() {
         float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
         for (size_t i = 0; i < _state.frames.size(); ++i) {
-            const SDL_Rect& frame = _state.frames[i];
+            const rendering::Frame& frame = _state.frames[i];
 
             ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
                           static_cast<float>(frame.y) / texture->height()};
@@ -138,7 +140,7 @@ void AnimationPreview::render() {
             ImGui::Text("No frame to preview");
             ImGui::End();
         } else {
-            const SDL_Rect& frame = _state.frames[_state.animation_state.current_frame];
+            const rendering::Frame& frame = _state.frames[_state.animation_state.current_frame];
             ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
                           static_cast<float>(frame.y) / texture->height()};
             ImVec2 uv1 = {static_cast<float>(frame.x + frame.w) / texture->width(),
@@ -186,7 +188,7 @@ void AnimationPreview::draw_background_grid(const ImVec2& pos, const ImVec2& siz
 }
 
 void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
-    const SDL_Rect& frame = _state.frames[frame_index];
+    const rendering::Frame& frame = _state.frames[frame_index];
     float desired_scale = 4.0f;
     _state.zoom_state.target_scale = desired_scale;
 

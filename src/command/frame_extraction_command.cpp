@@ -2,12 +2,15 @@
 
 #include <core/logger.hpp>
 
+#include "rendering/frame.hpp"
+
 namespace piksy {
 namespace commands {
 
 FrameExtractionCommand::FrameExtractionCommand(const SDL_Rect& extraction_rect,
                                                std::shared_ptr<rendering::Texture2D> texture,
-                                               std::vector<SDL_Rect>& out_frames, bool append)
+                                               std::vector<rendering::Frame>& out_frames,
+                                               bool append)
     : m_extraction_rect(extraction_rect),
       m_texture(texture),
       m_out_frames(out_frames),
@@ -60,11 +63,11 @@ void FrameExtractionCommand::execute() {
             for (const auto& contour : contours) {
                 cv::Rect bounding_rect = cv::boundingRect(contour);
 
-                SDL_Rect frame_rect{bounding_rect.x + intersection_rect.x,
-                                    bounding_rect.y + intersection_rect.y, bounding_rect.width,
-                                    bounding_rect.height};
+                rendering::Frame frame(bounding_rect.x + intersection_rect.x,
+                                       bounding_rect.y + intersection_rect.y, bounding_rect.width,
+                                       bounding_rect.height);
 
-                m_out_frames.push_back(frame_rect);
+                m_out_frames.push_back(frame);
             }
 
             // Perform iterative sorting
@@ -73,11 +76,12 @@ void FrameExtractionCommand::execute() {
             int current_tolerance = initial_tolerance;
 
             for (int i = 0; i < 3; ++i) {
-                std::stable_sort(m_out_frames.begin(), m_out_frames.end(),
-                                 [current_tolerance](const SDL_Rect& a, const SDL_Rect& b) {
-                                     if (std::abs(a.y - b.y) <= current_tolerance) return a.x < b.x;
-                                     return a.y < b.y;
-                                 });
+                std::stable_sort(
+                    m_out_frames.begin(), m_out_frames.end(),
+                    [current_tolerance](const rendering::Frame& a, const rendering::Frame& b) {
+                        if (std::abs(a.y - b.y) <= current_tolerance) return a.x < b.x;
+                        return a.y < b.y;
+                    });
                 current_tolerance *= 2;
             }
 

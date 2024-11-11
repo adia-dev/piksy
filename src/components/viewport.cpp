@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "icons/IconsFontAwesome4.h"
+#include "rendering/frame.hpp"
 
 namespace piksy {
 namespace components {
@@ -255,8 +256,9 @@ void Viewport::process_selection() {
             _state.selected_frames.clear();
 
             for (size_t i = 0; i < _state.frames.size(); ++i) {
-                const SDL_Rect& frame = _state.frames[i];
-                if (SDL_HasIntersection(&frame, &selection_world_rect)) {
+                const rendering::Frame& frame = _state.frames[i];
+                const SDL_Rect frame_rect{frame.x, frame.y, frame.w, frame.h};
+                if (SDL_HasIntersection(&frame_rect, &selection_world_rect)) {
                     _state.selected_frames.insert(i);
                 }
             }
@@ -384,7 +386,7 @@ void Viewport::render_frames() const {
 
     // Render loop with reduced computation
     for (size_t i = 0; i < _state.frames.size(); ++i) {
-        const SDL_Rect& frame = _state.frames[i];
+        const rendering::Frame& frame = _state.frames[i];
         SDL_Rect render_frame_rect{static_cast<int>((frame.x + offset.x) * scale),
                                    static_cast<int>((frame.y + offset.y) * scale),
                                    static_cast<int>(frame.w * scale),

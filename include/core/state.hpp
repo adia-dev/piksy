@@ -8,6 +8,8 @@
 #include <rendering/sprite.hpp>
 #include <unordered_set>
 
+#include "rendering/frame.hpp"
+
 namespace piksy {
 namespace core {
 
@@ -146,12 +148,11 @@ struct State {
     float fps;
 
     // Frames rects from the viewport
-    std::vector<SDL_Rect> frames;
+    std::vector<rendering::Frame> frames;
     std::unordered_set<size_t> selected_frames;
 
     Tool current_tool = Tool::PAN;
 
-    ~State() { Logger::debug("State cleanup up"); }
 };
 }  // namespace core
 }  // namespace piksy
