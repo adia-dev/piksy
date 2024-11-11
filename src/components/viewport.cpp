@@ -170,8 +170,20 @@ void Viewport::process_mouse_input() {
 
 void Viewport::process_zoom() {
     float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-        _state.zoom_state.target_scale += wheel * _state.zoom_state.zoom_speed;
+
+    float zoom_accel = wheel;
+    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) || _state.current_tool == core::Tool::ZOOM) {
+        float drag_y = _state.mouse_state.is_pressed *
+                       (_state.mouse_state.current_pos.y - _state.mouse_state.start_pos.y);
+
+        // TODO: Make the drag y factor a variable
+        if (std::fabs(drag_y * 0.01f) > wheel) {
+            zoom_accel = drag_y * 0.01f;
+        }
+    }
+
+    if (zoom_accel != 0.0f) {
+        _state.zoom_state.target_scale += zoom_accel * _state.zoom_state.zoom_speed;
         _state.zoom_state.target_scale = std::clamp(_state.zoom_state.target_scale, 0.1f, 10.0f);
     }
 }
@@ -254,14 +266,15 @@ void Viewport::render_texture() {
 void Viewport::render_cursor_hud() {
     ImVec2 mouse_pos = ImGui::GetMousePos();
 
-    if (std::fabs(_state.zoom_state.target_scale - _state.zoom_state.current_scale) >= 0.001f) {
+    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) ||
+        std::fabs(_state.zoom_state.target_scale - _state.zoom_state.current_scale) >= 0.001f) {
         ImVec2 text_offset(5, -10);
         ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
         ImGui::SetCursorScreenPos(text_pos);
         ImGui::Text("%.2f", _state.zoom_state.current_scale);
     }
 
-    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) ||
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
         (std::fabs(_state.pan_state.current_offset.x - _state.pan_state.target_offset.x) >=
              0.001f &&
          std::fabs(_state.pan_state.current_offset.y - _state.pan_state.target_offset.y) >=
