@@ -163,13 +163,13 @@ void AnimationPreview::render() {
             }
 
             ImVec2 center_offset = {(available_space.x - display_size.x) / 2.0f,
-                                    (available_space.y - display_size.y) / 2.0f};
+                                    available_space.y - display_size.y};
             ImGui::SetCursorPos({ImGui::GetCursorPos().x + center_offset.x,
                                  ImGui::GetCursorPos().y + center_offset.y});
 
             draw_background_grid(ImGui::GetItemRectMin(), available_space);
-
             ImGui::Image((ImTextureID)(intptr_t)texture->get(), display_size, uv0, uv1);
+
             ImGui::End();
         }
     }
