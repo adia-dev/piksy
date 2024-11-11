@@ -37,7 +37,7 @@ void Inspector::render() {
     ImGui::Text("Viewport");
     // TODO: rewrite this help marker
     help_marker("This color is used to replace specific colors in the texture.");
-    ImGui::SliderInt("##Viewport Grid Cell Size", &_state.viewport_grid_cell_size, 0, 1000);
+    ImGui::SliderInt("##Viewport Grid Cell Size", &_state.viewport_state.grid_cell_size, 0, 1000);
 
     ImGui::Separator();
 

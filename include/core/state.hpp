@@ -1,9 +1,10 @@
 #pragma once
 
+#include <SDL_rect.h>
+
+#include <core/logger.hpp>
 #include <filesystem>
 #include <rendering/sprite.hpp>
-
-#include "core/logger.hpp"
 
 namespace piksy {
 namespace core {
@@ -32,17 +33,22 @@ struct AnimationState {
     int current_frame = 0;
 };
 
+struct ViewportState {
+    ImVec2 size;
+    SDL_Rect selection_rect;
+    int grid_cell_size = 20;
+};
+
 struct State {
     rendering::Sprite texture_sprite;
     float replacement_color[4]{0.0f, 0.0f, 0.0f, 0.0f};
     std::filesystem::path current_path = RESOURCE_DIR;
-    int viewport_grid_cell_size = 20;
 
     MouseState mouse_state;
     ZoomState zoom_state;
     PanState pan_state;
     AnimationState animation_state;
-    ImVec2 viewport_size;
+    ViewportState viewport_state;
 
     // Frames rects from the viewport
     std::vector<SDL_Rect> frames;

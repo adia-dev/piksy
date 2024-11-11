@@ -78,7 +78,7 @@ void Viewport::render() {
 
     ImVec2 viewport_size = ImGui::GetContentRegionAvail();
     if (viewport_size.x != _viewport_size.x || viewport_size.y != _viewport_size.y) {
-        _state.viewport_size = viewport_size;
+        _state.viewport_state.size = viewport_size;
         _viewport_size = viewport_size;
         create_render_texture(static_cast<int>(_viewport_size.x),
                               static_cast<int>(_viewport_size.y));
@@ -300,7 +300,7 @@ void Viewport::render_grid_background() {
     SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
 
     float scaled_grid_cell_size =
-        std::max(_state.viewport_grid_cell_size * _state.zoom_state.current_scale, 1.0f);
+        std::max(_state.viewport_state.grid_cell_size * _state.zoom_state.current_scale, 1.0f);
 
     float offset_x = fmod(_state.pan_state.current_offset.x * _state.zoom_state.current_scale,
                           scaled_grid_cell_size);

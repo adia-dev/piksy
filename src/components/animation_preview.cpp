@@ -76,7 +76,7 @@ void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
     float frame_center_x = frame.x + frame.w / 2.0f;
     float frame_center_y = frame.y + frame.h / 2.0f;
 
-    ImVec2 viewport_size = _state.viewport_size;
+    ImVec2 viewport_size = _state.viewport_state.size;
 
     float pan_offset_x = (viewport_size.x / 2.0f) / desired_scale - frame_center_x;
     float pan_offset_y = (viewport_size.y / 2.0f) / desired_scale - frame_center_y;
