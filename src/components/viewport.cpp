@@ -88,7 +88,18 @@ void Viewport::update() {
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_Escape)) {
-        _state.selected_frames.clear();
+        switch (_state.current_tool) {
+            case core::Tool::SELECT:
+                _state.selected_frames.clear();
+                break;
+            case core::Tool::EXTRACT:
+                _state.animation_state.current_frame = 0;
+                _state.frames.clear();
+                _state.selected_frames.clear();
+                break;
+            default:
+                break;
+        }
     }
 }
 

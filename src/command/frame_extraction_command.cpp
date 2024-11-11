@@ -39,12 +39,10 @@ void FrameExtractionCommand::execute() {
             cv::Mat mat_gray;
             cv::cvtColor(mat, mat_gray, cv::COLOR_RGBA2GRAY);
 
-            // TODO: Make this dynamic
             int threshold_value = 1;
             cv::Mat thresholded;
             cv::threshold(mat_gray, thresholded, threshold_value, 255, cv::THRESH_BINARY);
 
-            // TODO: Make this dynamic
             int dilation_size = 2;
             cv::Mat element = cv::getStructuringElement(
                 cv::MORPH_RECT, cv::Size(2 * dilation_size + 1, 2 * dilation_size + 1),
@@ -68,7 +66,21 @@ void FrameExtractionCommand::execute() {
 
                 m_out_frames.push_back(frame_rect);
             }
-            // TODO: Sort the frames by their position, based on the selection rect
+
+            // Perform iterative sorting
+            // TODO: Make it configurable, passes and tolerance
+            const int initial_tolerance = 5;
+            int current_tolerance = initial_tolerance;
+
+            for (int i = 0; i < 3; ++i) {
+                std::stable_sort(m_out_frames.begin(), m_out_frames.end(),
+                                 [current_tolerance](const SDL_Rect& a, const SDL_Rect& b) {
+                                     if (std::abs(a.y - b.y) <= current_tolerance) return a.x < b.x;
+                                     return a.y < b.y;
+                                 });
+                current_tolerance *= 2;
+            }
+
         } catch (const std::exception& ex) {
             core::Logger::error("Failed to process the selected area: %s", ex.what());
         }
@@ -76,5 +88,6 @@ void FrameExtractionCommand::execute() {
         SDL_UnlockTexture(texture->get());
     }
 }
+
 }  // namespace commands
 }  // namespace piksy
