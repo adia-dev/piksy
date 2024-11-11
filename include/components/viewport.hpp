@@ -47,7 +47,6 @@ class Viewport : public UIComponent {
     // TODO: Move these to commands
     void handle_background_color_swapping(rendering::Sprite& sprite, float& texture_x,
                                           float& texture_y);
-    void swap_texture_color(const SDL_Color& from, const SDL_Color& to);
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
 
     void handle_click(float x, float y);

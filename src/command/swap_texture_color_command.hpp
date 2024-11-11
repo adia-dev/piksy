@@ -5,26 +5,24 @@
 
 #include <command/command.hpp>
 #include <core/state.hpp>
+#include <cstdint>
 #include <memory>
 #include <opencv2/opencv.hpp>
 #include <rendering/texture2D.hpp>
-#include <vector>
 
 namespace piksy {
 namespace commands {
-class FrameExtractionCommand : public Command {
+class SwapTextureCommand : public Command {
    public:
-    FrameExtractionCommand(const SDL_Rect& extraction_rect,
-                           std::shared_ptr<rendering::Texture2D> texture,
-                           std::vector<SDL_Rect>& out_frames, bool append = false);
+    SwapTextureCommand(const SDL_Color& m_from, const SDL_Color& m_to,
+                       std::shared_ptr<rendering::Texture2D> m_texture, uint8_t threshold = 1);
 
     virtual void execute() override;
 
    private:
-    SDL_Rect m_extraction_rect;
+    SDL_Color m_from, m_to;
     std::shared_ptr<rendering::Texture2D> m_texture;
-    std::vector<SDL_Rect>& m_out_frames;
-    bool m_append = false;
+    uint8_t m_threshold = 1;
 };
 }  // namespace commands
 }  // namespace piksy

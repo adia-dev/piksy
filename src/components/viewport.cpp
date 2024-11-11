@@ -6,6 +6,8 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <command/frame_extraction_command.hpp>
+#include <command/swap_texture_color_command.hpp>
 #include <components/viewport.hpp>
 #include <core/logger.hpp>
 #include <core/state.hpp>
@@ -14,8 +16,6 @@
 #include <utils/dump.hpp>
 #include <utils/maths.hpp>
 #include <vector>
-
-#include "command/frame_extraction_command.hpp"
 
 namespace piksy {
 namespace components {
@@ -30,14 +30,18 @@ Viewport::Viewport(core::State& state, rendering::Renderer& renderer,
     create_render_texture(static_cast<int>(_viewport_size.x), static_cast<int>(_viewport_size.y));
 
     // NOTE: DON'T COMMIT
+    // UPADTE: You commited it dumbass...
     if (_state.texture_sprite.texture() != nullptr) {
-        swap_texture_color(SDL_Color{255, 255, 255, 255},
-                           SDL_Color{
-                               static_cast<Uint8>(_state.replacement_color[0] * 255),
-                               static_cast<Uint8>(_state.replacement_color[1] * 255),
-                               static_cast<Uint8>(_state.replacement_color[2] * 255),
-                               static_cast<Uint8>(_state.replacement_color[3] * 255),
-                           });
+        commands::SwapTextureCommand command(
+            {255, 255, 255, 255},
+            SDL_Color{
+                static_cast<Uint8>(_state.replacement_color[0] * 255),
+                static_cast<Uint8>(_state.replacement_color[1] * 255),
+                static_cast<Uint8>(_state.replacement_color[2] * 255),
+                static_cast<Uint8>(_state.replacement_color[3] * 255),
+            },
+            _state.texture_sprite.texture());
+        command.execute();
     }
 }
 
@@ -376,21 +380,6 @@ void Viewport::render_frames() const {
     }
 }
 
-void Viewport::handle_background_color_swapping(rendering::Sprite& sprite, float& texture_x,
-                                                float& texture_y) {
-    SDL_Color pixel_color =
-        get_texture_pixel_color(static_cast<int>(texture_x), static_cast<int>(texture_y), sprite);
-
-    if (_state.current_tool == core::Tool::COLOR_SWAP && !_state.mouse_state.is_panning) {
-        swap_texture_color(pixel_color, SDL_Color{
-                                            static_cast<Uint8>(_state.replacement_color[0] * 255),
-                                            static_cast<Uint8>(_state.replacement_color[1] * 255),
-                                            static_cast<Uint8>(_state.replacement_color[2] * 255),
-                                            static_cast<Uint8>(_state.replacement_color[3] * 255),
-                                        });
-    }
-}
-
 void Viewport::handle_click(float x, float y) {
     float world_x = (x / _state.zoom_state.current_scale) - _state.pan_state.current_offset.x;
     float world_y = (y / _state.zoom_state.current_scale) - _state.pan_state.current_offset.y;
@@ -402,50 +391,30 @@ void Viewport::handle_click(float x, float y) {
     float texture_y = world_y - rect.y;
 
     if (texture_x >= 0 && texture_x < rect.w && texture_y >= 0 && texture_y < rect.h) {
-        sprite.set_selected(true);
-
-        handle_background_color_swapping(sprite, texture_x, texture_y);
+        switch (_state.current_tool) {
+            case core::Tool::SELECT:
+                sprite.set_selected(true);
+                break;
+            case core::Tool::COLOR_SWAP: {
+                SDL_Color pixel_color = get_texture_pixel_color(
+                    static_cast<int>(texture_x), static_cast<int>(texture_y), sprite);
+                commands::SwapTextureCommand command(
+                    pixel_color,
+                    SDL_Color{
+                        static_cast<Uint8>(_state.replacement_color[0] * 255),
+                        static_cast<Uint8>(_state.replacement_color[1] * 255),
+                        static_cast<Uint8>(_state.replacement_color[2] * 255),
+                        static_cast<Uint8>(_state.replacement_color[3] * 255),
+                    },
+                    _state.texture_sprite.texture());
+                command.execute();
+            } break;
+            default:
+                break;
+        }
     } else {
         sprite.set_selected(false);
     }
-}
-
-void Viewport::swap_texture_color(const SDL_Color& from, const SDL_Color& to) {
-    auto texture = _state.texture_sprite.texture();
-    void* pixels;
-    int pitch;
-
-    if (SDL_LockTexture(_state.texture_sprite.texture()->get(), nullptr, &pixels, &pitch) < 0) {
-        core::Logger::error("Failed to lock the texture to swap the background color: %s",
-                            SDL_GetError());
-        return;
-    }
-
-    Uint32 format;
-    SDL_QueryTexture(texture->get(), &format, nullptr, nullptr, nullptr);
-    SDL_PixelFormat* pixel_format = SDL_AllocFormat(format);
-    Uint32* pixel_data = static_cast<Uint32*>(pixels);
-
-    Uint32 to_u32 = SDL_MapRGBA(pixel_format, to.r, to.g, to.b, to.a);
-    int num_replaced = 0;
-    for (int y = 0; y < texture->height(); ++y) {
-        for (int x = 0; x < texture->width(); ++x) {
-            Uint32* current_pixel = pixel_data + y * (pitch / 4) + x;
-            Uint8 pr, pg, pb, pa;
-            SDL_GetRGBA(*current_pixel, pixel_format, &pr, &pg, &pb, &pa);
-            if (pr == from.r && pg == from.g && pb == from.b && pa == from.a) {
-                *current_pixel = to_u32;
-                ++num_replaced;
-            }
-        }
-    }
-
-    core::Logger::debug("Number of pixels replaced: %d", num_replaced);
-    core::Logger::info("Replaced the color (%d, %d, %d, %d) with the color (%d, %d, %d, %d)",
-                       from.r, from.g, from.b, from.a, to.r, to.g, to.b, to.a);
-
-    SDL_UnlockTexture(_state.texture_sprite.texture()->get());
-    SDL_FreeFormat(pixel_format);
 }
 
 SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite) {
