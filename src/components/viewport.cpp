@@ -13,7 +13,6 @@
 #include <core/state.hpp>
 #include <opencv2/opencv.hpp>
 #include <rendering/sprite.hpp>
-#include <utils/dump.hpp>
 #include <utils/maths.hpp>
 #include <vector>
 
