@@ -12,7 +12,7 @@ namespace piksy {
 namespace managers {
 class ResourceManager {
    public:
-    explicit ResourceManager(rendering::Renderer &renderer) : _renderer(renderer) {}
+    explicit ResourceManager(rendering::Renderer &renderer) : m_renderer(renderer) {}
 
     void load_texture(const std::string &texture_path);
     std::shared_ptr<rendering::Texture2D> get_texture(const std::string &texture_path);
@@ -23,9 +23,9 @@ class ResourceManager {
     void cleanup();
 
    private:
-    rendering::Renderer &_renderer;
-    std::unordered_map<std::string, std::shared_ptr<rendering::Texture2D>> _textures;
-    std::unordered_map<std::string, std::shared_ptr<rendering::Font>> _fonts;
+    rendering::Renderer &m_renderer;
+    std::unordered_map<std::string, std::shared_ptr<rendering::Texture2D>> m_textures;
+    std::unordered_map<std::string, std::shared_ptr<rendering::Font>> m_fonts;
 };
 }  // namespace managers
 }  // namespace piksy

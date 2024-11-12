@@ -23,16 +23,16 @@ class Logger {
     }
 
     void init(LoggerConfig* config) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _config = config;
-        _file_stream.open(_config->log_file, std::ios::out | std::ios::app);
-        if (!_file_stream.is_open()) {
-            throw std::runtime_error("Failed to open log file: " + _config->log_file);
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_config = config;
+        m_file_stream.open(m_config->log_file, std::ios::out | std::ios::app);
+        if (!m_file_stream.is_open()) {
+            throw std::runtime_error("Failed to open log file: " + m_config->log_file);
         }
     }
 
-    const std::deque<std::pair<LogLevel, std::string>>& messages() const { return _messages; }
-    void clear_messages() { _messages.clear(); }
+    const std::deque<std::pair<LogLevel, std::string>>& messages() const { return m_messages; }
+    void clear_messages() { m_messages.clear(); }
 
     template <typename... Args>
     static void trace(const std::string& format_str, Args&&... args) {
@@ -80,7 +80,7 @@ class Logger {
    private:
     template <typename... Args>
     void log(LogLevel level, const std::string& format_str, Args&&... args) {
-        if (level < _config->level) return;
+        if (level < m_config->level) return;
 
         std::string message;
         if constexpr (sizeof...(args) > 0) {
@@ -93,22 +93,22 @@ class Logger {
         }
 
         std::string formatted_message = format_message(level, message);
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(m_mutex);
 
-        _messages.push_back({level, formatted_message});
+        m_messages.push_back({level, formatted_message});
 
         const size_t MAX_LOG_SIZE = 1000;
-        if (_messages.size() > MAX_LOG_SIZE) {
-            _messages.pop_front();
+        if (m_messages.size() > MAX_LOG_SIZE) {
+            m_messages.pop_front();
         }
 
-        if (_config->enable_colors) {
+        if (m_config->enable_colors) {
             const char* color_code = level_color_code(level);
             std::cout << color_code << formatted_message << "\033[0m" << std::endl;
         } else {
             std::cout << formatted_message << std::endl;
         }
-        _file_stream << formatted_message << std::endl;
+        m_file_stream << formatted_message << std::endl;
     }
 
     std::string format_message(LogLevel level, const std::string& message) {
@@ -184,7 +184,7 @@ class Logger {
    private:
     Logger() = default;
     ~Logger() {
-        if (_file_stream.is_open()) _file_stream.close();
+        if (m_file_stream.is_open()) m_file_stream.close();
     }
 
     Logger(const Logger&) = delete;
@@ -192,10 +192,10 @@ class Logger {
     Logger& operator=(const Logger&) = delete;
     Logger& operator=(Logger&&) = delete;
 
-    LoggerConfig* _config = nullptr;
-    std::mutex _mutex;
-    std::ofstream _file_stream;
-    std::deque<std::pair<LogLevel, std::string>> _messages;
+    LoggerConfig* m_config = nullptr;
+    std::mutex m_mutex;
+    std::ofstream m_file_stream;
+    std::deque<std::pair<LogLevel, std::string>> m_messages;
 };
 
 }  // namespace piksy::core

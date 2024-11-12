@@ -15,7 +15,7 @@ class Font {
     void cleanup();
 
    private:
-    std::unique_ptr<TTF_Font, decltype(&TTF_CloseFont)> _font{nullptr, TTF_CloseFont};
+    std::unique_ptr<TTF_Font, decltype(&TTF_CloseFont)> m_font{nullptr, TTF_CloseFont};
 };
 }  // namespace rendering
 }  // namespace piksy

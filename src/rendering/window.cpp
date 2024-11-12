@@ -8,10 +8,10 @@ namespace rendering {
 Window::~Window() { cleanup(); }
 
 void Window::init(const core::WindowConfig& config) {
-    _window.reset(SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
+    m_window.reset(SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
                                    SDL_WINDOWPOS_CENTERED, config.width, config.height,
                                    config.flags));
-    if (_window == nullptr) {
+    if (m_window == nullptr) {
         core::Logger::fatal("Failed to create a Window: %s", SDL_GetError());
     }
 
@@ -19,12 +19,12 @@ void Window::init(const core::WindowConfig& config) {
 }
 
 void Window::cleanup() {
-    _window = nullptr;
+    m_window = nullptr;
     core::Logger::debug("Window cleanup up successfully");
 }
 
-const SDL_Window* Window::get() const { return _window.get(); }
+const SDL_Window* Window::get() const { return m_window.get(); }
 
-SDL_Window* Window::get() { return _window.get(); }
+SDL_Window* Window::get() { return m_window.get(); }
 }  // namespace rendering
 }  // namespace piksy

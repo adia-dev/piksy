@@ -31,10 +31,10 @@ class Application {
     void run();
     void shutdown();
 
-    State &mutable_state() { return _state; }
-    const State &state() const { return _state; }
+    State &mutable_state() { return m_state; }
+    const State &state() const { return m_state; }
 
-    const Config &config() const { return _config; }
+    const Config &config() const { return m_config; }
 
     rendering::Renderer &mutable_renderer();
     const rendering::Renderer &renderer() const;
@@ -67,21 +67,21 @@ class Application {
     Application(Application &&) = delete;
     Application(const Application &) = delete;
 
-    rendering::Window _window;
-    rendering::Renderer _renderer;
-    managers::ResourceManager _resource_manager;
+    rendering::Window m_window;
+    rendering::Renderer m_renderer;
+    managers::ResourceManager m_resource_manager;
 
-    ImGuiIO *_io = nullptr;
+    ImGuiIO *m_io = nullptr;
 
     // TODO: move this into the state
-    bool _show_demo_window = true;
-    bool _is_running = true;
-    ImVec4 _clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool m_show_demo_window = true;
+    bool m_is_running = true;
+    ImVec4 m_clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Config _config;
-    State _state;
+    Config m_config;
+    State m_state;
 
-    std::unordered_map<std::string, std::unique_ptr<components::UIComponent>> _ui_components;
+    std::unordered_map<std::string, std::unique_ptr<components::UIComponent>> m_ui_components;
 };
 }  // namespace core
 }  // namespace piksy

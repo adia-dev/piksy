@@ -11,7 +11,7 @@
 namespace piksy {
 namespace components {
 Inspector::Inspector(core::State& state, rendering::Renderer& renderer)
-    : UIComponent(state), _renderer(renderer) {}
+    : UIComponent(state), m_renderer(renderer) {}
 
 void Inspector::update() {}
 
@@ -28,7 +28,7 @@ void Inspector::render() {
     ImGui::Text("Replacement Color");
     ImGui::SameLine();
     help_marker("This color is used to replace specific colors in the texture.");
-    ImGui::ColorEdit4("##Replacement Color", reinterpret_cast<float*>(&_state.replacement_color),
+    ImGui::ColorEdit4("##Replacement Color", reinterpret_cast<float*>(&m_state.replacement_color),
                       ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel |
                           ImGuiColorEditFlags_AlphaPreview);
 
@@ -37,7 +37,7 @@ void Inspector::render() {
     ImGui::Text("Viewport");
     // TODO: rewrite this help marker
     help_marker("This color is used to replace specific colors in the texture.");
-    ImGui::SliderInt("##Viewport Grid Cell Size", &_state.viewport_state.grid_cell_size, 0, 1000);
+    ImGui::SliderInt("##Viewport Grid Cell Size", &m_state.viewport_state.grid_cell_size, 0, 1000);
 
     ImGui::Separator();
 
@@ -48,7 +48,7 @@ void Inspector::render() {
 
 void Inspector::render_sprite_properties() {
     if (ImGui::CollapsingHeader("Sprite Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-        auto& sprite = _state.texture_sprite;
+        auto& sprite = m_state.texture_sprite;
 
         int position[2]{sprite.x(), sprite.y()};
         ImGui::Text("Position");
@@ -100,7 +100,7 @@ void Inspector::render_texture_properties(std::shared_ptr<rendering::Texture2D> 
         ImGui::Separator();
         if (ImGui::Button("Reload Texture")) {
             try {
-                texture->reload(_renderer.get());
+                texture->reload(m_renderer.get());
             } catch (const std::runtime_error& ex) {
                 core::Logger::error("Failed to reload the texture: %s", ex.what());
             }

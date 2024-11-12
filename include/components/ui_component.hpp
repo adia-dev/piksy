@@ -6,14 +6,14 @@ namespace piksy {
 namespace components {
 class UIComponent {
    public:
-    UIComponent(core::State& state) : _state(state) {}
+    UIComponent(core::State& state) : m_state(state) {}
     virtual void update() = 0;
     virtual void render() = 0;
 
     virtual ~UIComponent() = default;
 
    protected:
-    core::State& _state;
+    core::State& m_state;
 };
 }  // namespace components
 }  // namespace piksy

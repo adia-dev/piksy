@@ -18,7 +18,7 @@ class Inspector : public UIComponent {
     void help_marker(const std::string& desc);
 
    private:
-    rendering::Renderer& _renderer;
+    rendering::Renderer& m_renderer;
 };
 }  // namespace components
 }  // namespace piksy

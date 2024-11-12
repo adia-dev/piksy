@@ -16,9 +16,6 @@ class AnimationPreview : public UIComponent {
     void adjust_pan_and_zoom_to_frame(int frame_index);
     void draw_background_grid(const ImVec2& pos, const ImVec2& size) const;
     void delete_frame(size_t frame_index);
-
-   private:
-    float _frame_display_size = 100.0f;
 };
 
 }  // namespace components

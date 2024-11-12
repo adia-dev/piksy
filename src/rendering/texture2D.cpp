@@ -14,13 +14,13 @@ namespace rendering {
 
 Texture2D::Texture2D(SDL_Texture* texture) {
     if (texture != nullptr) {
-        SDL_QueryTexture(texture, nullptr, nullptr, &_width, &_height);
+        SDL_QueryTexture(texture, nullptr, nullptr, &m_width, &m_height);
     }
-    _texture.reset(texture);
+    m_texture.reset(texture);
 }
 
 Texture2D::Texture2D(SDL_Renderer* renderer, const std::string& texture_path)
-    : _path(texture_path) {
+    : m_path(texture_path) {
     load(renderer);
 }
 
@@ -32,14 +32,14 @@ void Texture2D::load(SDL_Renderer* renderer) {
         throw std::runtime_error("Failed to load the texture, the renderer is null");
     }
 
-    if (!fs::exists(_path)) {
+    if (!fs::exists(m_path)) {
         core::Logger::error("Failed to load the texture, file does not exist");
         throw std::runtime_error("Failed to load the texture, file does not exist");
     }
 
-    SDL_Surface* surface = IMG_Load(_path.c_str());
+    SDL_Surface* surface = IMG_Load(m_path.c_str());
     if (surface == nullptr) {
-        core::Logger::error("Failed to load the image %s into a surface: %s", _path.c_str(),
+        core::Logger::error("Failed to load the image %s into a surface: %s", m_path.c_str(),
                             IMG_GetError());
         throw std::runtime_error(std::string("Failed to load the image into a surface: ") +
                                  IMG_GetError());
@@ -53,14 +53,14 @@ void Texture2D::load(SDL_Renderer* renderer) {
         throw "unreachable";
     }
 
-    _pitch = surface->pitch;
-    _width = surface->w;
-    _height = surface->h;
+    m_pitch = surface->pitch;
+    m_width = surface->w;
+    m_height = surface->h;
 
-    _texture.reset(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-                                     SDL_TEXTUREACCESS_STREAMING, _width, _height));
-    SDL_SetTextureBlendMode(_texture.get(), SDL_BLENDMODE_BLEND);
-    if (_texture == nullptr) {
+    m_texture.reset(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+                                     SDL_TEXTUREACCESS_STREAMING, m_width, m_height));
+    SDL_SetTextureBlendMode(m_texture.get(), SDL_BLENDMODE_BLEND);
+    if (m_texture == nullptr) {
         core::Logger::error("Failed to create a texture from a surface: %s", SDL_GetError());
         throw std::runtime_error(std::string("Failed to create a texture from a surface: %s") +
                                  SDL_GetError());
@@ -68,29 +68,29 @@ void Texture2D::load(SDL_Renderer* renderer) {
 
     void* pixels;
     int pitch;
-    if (SDL_LockTexture(_texture.get(), nullptr, &pixels, &pitch) != 0) {
+    if (SDL_LockTexture(m_texture.get(), nullptr, &pixels, &pitch) != 0) {
         core::Logger::error("Failed to lock the texture: %s", SDL_GetError());
         throw std::runtime_error(std::string("Failed to lock the texture: %s") + SDL_GetError());
     }
 
     Uint8* dst = static_cast<Uint8*>(pixels);
     Uint8* src = static_cast<Uint8*>(surface->pixels);
-    for (int row = 0; row < _height; ++row) {
+    for (int row = 0; row < m_height; ++row) {
         memcpy(dst + row * pitch, src + row * surface->pitch, surface->pitch);
     }
 
-    SDL_UnlockTexture(_texture.get());
+    SDL_UnlockTexture(m_texture.get());
     SDL_FreeSurface(surface);
 }
 
-SDL_Texture* Texture2D::get() const { return _texture.get(); }
+SDL_Texture* Texture2D::get() const { return m_texture.get(); }
 
-int Texture2D::width() const { return _width; }
+int Texture2D::width() const { return m_width; }
 
-int Texture2D::height() const { return _height; }
+int Texture2D::height() const { return m_height; }
 
-const std::string& Texture2D::path() const { return _path; }
+const std::string& Texture2D::path() const { return m_path; }
 
-void Texture2D::set_path(const std::string& path) { _path = path; }
+void Texture2D::set_path(const std::string& path) { m_path = path; }
 }  // namespace rendering
 }  // namespace piksy

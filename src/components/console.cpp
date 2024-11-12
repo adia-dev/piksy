@@ -17,35 +17,35 @@ void Console::render() {
     ImGui::SameLine();
     bool copy_to_clipboard = ImGui::Button("Copy");
     ImGui::SameLine();
-    ImGui::Checkbox("Auto-scroll", &_auto_scroll);
+    ImGui::Checkbox("Auto-scroll", &m_auto_scroll);
 
     ImGui::Separator();
 
-    if (ImGui::Checkbox("Trace", &_show_trace)) {
-        _scroll_to_bottom = true;
+    if (ImGui::Checkbox("Trace", &m_show_trace)) {
+        m_scroll_to_bottom = true;
     }
     ImGui::SameLine();
-    if (ImGui::Checkbox("Debug", &_show_debug)) {
-        _scroll_to_bottom = true;
+    if (ImGui::Checkbox("Debug", &m_show_debug)) {
+        m_scroll_to_bottom = true;
     }
     ImGui::SameLine();
-    if (ImGui::Checkbox("Info", &_show_info)) {
-        _scroll_to_bottom = true;
+    if (ImGui::Checkbox("Info", &m_show_info)) {
+        m_scroll_to_bottom = true;
     }
     ImGui::SameLine();
-    if (ImGui::Checkbox("Warn", &_show_warn)) {
-        _scroll_to_bottom = true;
+    if (ImGui::Checkbox("Warn", &m_show_warn)) {
+        m_scroll_to_bottom = true;
     }
     ImGui::SameLine();
-    if (ImGui::Checkbox("Error", &_show_error)) {
-        _scroll_to_bottom = true;
+    if (ImGui::Checkbox("Error", &m_show_error)) {
+        m_scroll_to_bottom = true;
     }
     ImGui::SameLine();
-    if (ImGui::Checkbox("Fatal", &_show_fatal)) {
-        _scroll_to_bottom = true;
+    if (ImGui::Checkbox("Fatal", &m_show_fatal)) {
+        m_scroll_to_bottom = true;
     }
 
-    _filter.Draw("Filter", -100.0f);
+    m_filter.Draw("Filter", -100.0f);
     ImGui::Separator();
 
     ImGui::BeginChild("ConsoleArea", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -61,22 +61,22 @@ void Console::render() {
         bool show_message = false;
         switch (level) {
             case core::LogLevel::Trace:
-                show_message = _show_trace;
+                show_message = m_show_trace;
                 break;
             case core::LogLevel::Debug:
-                show_message = _show_debug;
+                show_message = m_show_debug;
                 break;
             case core::LogLevel::Info:
-                show_message = _show_info;
+                show_message = m_show_info;
                 break;
             case core::LogLevel::Warn:
-                show_message = _show_warn;
+                show_message = m_show_warn;
                 break;
             case core::LogLevel::Error:
-                show_message = _show_error;
+                show_message = m_show_error;
                 break;
             case core::LogLevel::Fatal:
-                show_message = _show_fatal;
+                show_message = m_show_fatal;
                 break;
             default:
                 show_message = true;
@@ -87,7 +87,7 @@ void Console::render() {
             continue;
         }
 
-        if (!_filter.PassFilter(message.c_str())) {
+        if (!m_filter.PassFilter(message.c_str())) {
             continue;
         }
 
@@ -99,10 +99,10 @@ void Console::render() {
     }
     ImGui::PopStyleVar();
 
-    if (_scroll_to_bottom || (_auto_scroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
+    if (m_scroll_to_bottom || (m_auto_scroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
         ImGui::SetScrollHereY(1.0f);
     }
-    _scroll_to_bottom = false;
+    m_scroll_to_bottom = false;
 
     ImGui::EndChild();
     ImGui::End();

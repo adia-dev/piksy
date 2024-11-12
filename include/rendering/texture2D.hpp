@@ -25,13 +25,13 @@ class Texture2D {
 
    private:
     // TODO: Write custom deleter with debug logs on delete
-    std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> _texture{nullptr,
+    std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> m_texture{nullptr,
                                                                          SDL_DestroyTexture};
 
-    int _width, _height, _pitch;
+    int m_width, m_height, m_pitch;
 
     // NOTE: Do I actually need this ?
-    std::string _path;
+    std::string m_path;
 };
 }  // namespace rendering
 }  // namespace piksy

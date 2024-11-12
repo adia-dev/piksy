@@ -23,13 +23,13 @@
 namespace piksy {
 namespace core {
 
-Application::Application() : _renderer(), _resource_manager(_renderer) { init(); }
+Application::Application() : m_renderer(), m_resource_manager(m_renderer) { init(); }
 
 Application::~Application() { cleanup(); }
 
 void Application::run() {
-    while (_is_running) {
-        if (SDL_GetWindowFlags(_window.get()) & SDL_WINDOW_MINIMIZED) {
+    while (m_is_running) {
+        if (SDL_GetWindowFlags(m_window.get()) & SDL_WINDOW_MINIMIZED) {
             SDL_Delay(10);
             continue;
         }
@@ -41,17 +41,17 @@ void Application::run() {
 }
 
 void Application::shutdown() {
-    _is_running = false;
+    m_is_running = false;
 
     core::Logger::debug("Shutting down the application...");
 }
 
-rendering::Renderer &Application::mutable_renderer() { return _renderer; }
+rendering::Renderer &Application::mutable_renderer() { return m_renderer; }
 
-const rendering::Renderer &Application::renderer() const { return _renderer; }
+const rendering::Renderer &Application::renderer() const { return m_renderer; }
 
 void Application::init() {
-    Logger::get().init(&_config.logger_config);
+    Logger::get().init(&m_config.logger_config);
     Logger::info("Initializing the application...");
 
     init_sdl2();
@@ -65,7 +65,7 @@ void Application::init() {
 }
 
 void Application::init_sdl2() {
-    if (SDL_Init(_config.init_flags) != 0) {
+    if (SDL_Init(m_config.init_flags) != 0) {
         core::Logger::fatal("Error initializing SDL: %s", SDL_GetError());
     }
 
@@ -77,64 +77,64 @@ void Application::init_sdl2() {
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 #endif
 
-    _window.init(_config.window_config);
-    _renderer.init(_window, _config.window_config);
+    m_window.init(m_config.window_config);
+    m_renderer.init(m_window, m_config.window_config);
 }
 
 void Application::init_imgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    ImGui_ImplSDL2_InitForSDLRenderer(_window.get(), _renderer.get());
-    ImGui_ImplSDLRenderer2_Init(_renderer.get());
+    ImGui_ImplSDL2_InitForSDLRenderer(m_window.get(), m_renderer.get());
+    ImGui_ImplSDLRenderer2_Init(m_renderer.get());
 
-    _io = &ImGui::GetIO();
-    (void)*_io;
-    _io->ConfigFlags |= _config.imgui_config.flags;
-    _io->FontGlobalScale = _config.imgui_config.font_scale;
-    _io->MouseDrawCursor = _config.imgui_config.custom_mouse_cursor;
+    m_io = &ImGui::GetIO();
+    (void)*m_io;
+    m_io->ConfigFlags |= m_config.imgui_config.flags;
+    m_io->FontGlobalScale = m_config.imgui_config.font_scale;
+    m_io->MouseDrawCursor = m_config.imgui_config.custom_mouse_cursor;
 
     ImFontConfig icons_config;
     icons_config.MergeMode = true;
     icons_config.PixelSnapH = true;
 
-    _io->IniFilename = _config.imgui_config.ini_filename.c_str();
-    core::Logger::debug("Loading layout from config file at: %s", _io->IniFilename);
+    m_io->IniFilename = m_config.imgui_config.ini_filename.c_str();
+    core::Logger::debug("Loading layout from config file at: %s", m_io->IniFilename);
     /* _io->Fonts->Clear(); */
     /* _io->Fonts->AddFontFromFileTTF(_config.imgui_config.font_filename.c_str(), 14.0f); */
     /* _io->Fonts->Build(); */
 
-    _config.imgui_config.config_style();
+    m_config.imgui_config.config_style();
 }
 
 void Application::init_textures() {
-    _resource_manager.load_texture(std::string(RESOURCE_DIR) + "/textures/janemba.png");
+    m_resource_manager.load_texture(std::string(RESOURCE_DIR) + "/textures/janemba.png");
 }
 
 void Application::init_fonts() {
-    _resource_manager.load_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
+    m_resource_manager.load_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
 }
 
 void Application::init_state() {
     // NOTE: DON'T COMMIT
-    _state.texture_sprite.set_texture(
-        _resource_manager.get_texture(std::string(RESOURCE_DIR) + "/textures/black_goku.png"));
+    m_state.texture_sprite.set_texture(
+        m_resource_manager.get_texture(std::string(RESOURCE_DIR) + "/textures/black_goku.png"));
 }
 
 void Application::init_components() {
-    _ui_components.emplace(
-        "Viewport", std::make_unique<components::Viewport>(_state, _renderer, _resource_manager));
-    _ui_components.emplace("Console", std::make_unique<components::Console>(_state));
+    m_ui_components.emplace(
+        "Viewport", std::make_unique<components::Viewport>(m_state, m_renderer, m_resource_manager));
+    m_ui_components.emplace("Console", std::make_unique<components::Console>(m_state));
     /* _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_state,
      * _renderer)); */
-    _ui_components.emplace("Project",
-                           std::make_unique<components::Project>(_state, _resource_manager));
-    _ui_components.emplace("Animation Preview",
-                           std::make_unique<components::AnimationPreview>(_state));
+    m_ui_components.emplace("Project",
+                           std::make_unique<components::Project>(m_state, m_resource_manager));
+    m_ui_components.emplace("Animation Preview",
+                           std::make_unique<components::AnimationPreview>(m_state));
 }
 
 void Application::cleanup() {
-    _resource_manager.cleanup();
+    m_resource_manager.cleanup();
 
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -142,11 +142,11 @@ void Application::cleanup() {
 
     TTF_Quit();
 
-    SDL_DestroyRenderer(_renderer.get());
-    SDL_DestroyWindow(_window.get());
+    SDL_DestroyRenderer(m_renderer.get());
+    SDL_DestroyWindow(m_window.get());
     SDL_Quit();
 
-    _io = nullptr;
+    m_io = nullptr;
 
     core::Logger::debug("Application successfully cleaned up");
 }
@@ -156,22 +156,22 @@ void Application::handle_events() {
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT) {
-            _is_running = false;
+            m_is_running = false;
         } else if (event.type == SDL_DROPFILE) {
             const char *dropped_filedir = event.drop.file;
 
-            ((components::Viewport *)_ui_components["Viewport"].get())
+            reinterpret_cast<components::Viewport *>(m_ui_components["Viewport"].get())
                 ->notify_dropped_file(dropped_filedir);
 
             SDL_free((void *)dropped_filedir);
         }
 
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
-            event.window.windowID == SDL_GetWindowID(_window.get())) {
-            _is_running = false;
+            event.window.windowID == SDL_GetWindowID(m_window.get())) {
+            m_is_running = false;
         }
 
-        if (_io->WantCaptureMouse) {
+        if (m_io->WantCaptureMouse) {
             continue;
         }
     }
@@ -185,10 +185,10 @@ void Application::update() {
     last_frame_time = current_frame_time;
 
     // Update delta time and fps in the state for global access
-    _state.delta_time = delta_time;
-    _state.fps = 1.0f / delta_time;
+    m_state.delta_time = delta_time;
+    m_state.fps = 1.0f / delta_time;
 
-    for (auto &[name, component] : _ui_components) {
+    for (auto &[name, component] : m_ui_components) {
         component->update();
     }
 }
@@ -227,7 +227,7 @@ void Application::render() {
         ImGui::End();
     }
 
-    for (auto &[name, component] : _ui_components) {
+    for (auto &[name, component] : m_ui_components) {
         component->render();
     }
 
@@ -245,7 +245,7 @@ void Application::render() {
                         // TODO: Handle opening a project
                     }
                     if (ImGui::MenuItem("Save", "Cmd+S")) {
-                        commands::SaveCommand command(_state, _config.app_config.save_file);
+                        commands::SaveCommand command(m_state, m_config.app_config.save_file);
                         command.execute();
                     }
                     if (ImGui::MenuItem("Exit", "Alt+F4")) {
@@ -298,15 +298,15 @@ void Application::render() {
     /* ImGui::ShowDemoWindow(&_show_demo_window); */
 
     ImGui::Render();
-    SDL_RenderSetScale(_renderer.get(), _io->DisplayFramebufferScale.x,
-                       _io->DisplayFramebufferScale.y);
-    SDL_SetRenderDrawColor(_renderer.get(), static_cast<Uint8>(_clear_color.x * 255),
-                           static_cast<Uint8>(_clear_color.y * 255),
-                           static_cast<Uint8>(_clear_color.z * 255),
-                           static_cast<Uint8>(_clear_color.w * 255));
-    SDL_RenderClear(_renderer.get());
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), _renderer.get());
-    SDL_RenderPresent(_renderer.get());
+    SDL_RenderSetScale(m_renderer.get(), m_io->DisplayFramebufferScale.x,
+                       m_io->DisplayFramebufferScale.y);
+    SDL_SetRenderDrawColor(m_renderer.get(), static_cast<Uint8>(m_clear_color.x * 255),
+                           static_cast<Uint8>(m_clear_color.y * 255),
+                           static_cast<Uint8>(m_clear_color.z * 255),
+                           static_cast<Uint8>(m_clear_color.w * 255));
+    SDL_RenderClear(m_renderer.get());
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), m_renderer.get());
+    SDL_RenderPresent(m_renderer.get());
 }
 
 }  // namespace core

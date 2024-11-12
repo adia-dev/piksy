@@ -20,7 +20,7 @@ class Renderer {
     SDL_Renderer* get();
 
    private:
-    std::shared_ptr<SDL_Renderer> _renderer{nullptr, SDL_DestroyRenderer};
+    std::shared_ptr<SDL_Renderer> m_renderer{nullptr, SDL_DestroyRenderer};
 };
 }  // namespace rendering
 }  // namespace piksy

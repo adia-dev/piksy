@@ -35,9 +35,9 @@ class Project : public UIComponent {
     void render_directory_entries(std::vector<DirectoryEntry>& entries);
 
    private:
-    managers::ResourceManager& _resource_manager;
-    std::map<std::string, bool> _directory_open_state;
-    std::vector<DirectoryEntry> _directory_cache;
+    managers::ResourceManager& m_resource_manager;
+    std::map<std::string, bool> m_directory_open_state;
+    std::vector<DirectoryEntry> m_directory_cache;
     std::unordered_map<std::string, const char*> m_file_extension_icons;
 };
 

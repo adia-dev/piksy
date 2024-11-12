@@ -13,19 +13,19 @@ namespace components {
 AnimationPreview::AnimationPreview(core::State& state) : UIComponent(state) {}
 
 void AnimationPreview::update() {
-    if (!_state.animation_state.is_playing || _state.frames.empty()) return;
+    if (!m_state.animation_state.is_playing || m_state.frames.empty()) return;
 
-    _state.animation_state.timer += _state.delta_time;
+    m_state.animation_state.timer += m_state.delta_time;
 
-    if (_state.animation_state.timer >= _state.animation_state.frame_duration) {
-        _state.animation_state.timer -= _state.animation_state.frame_duration;
-        _state.animation_state.current_frame =
-            (_state.animation_state.current_frame + 1) % _state.frames.size();
+    if (m_state.animation_state.timer >= m_state.animation_state.frame_duration) {
+        m_state.animation_state.timer -= m_state.animation_state.frame_duration;
+        m_state.animation_state.current_frame =
+            (m_state.animation_state.current_frame + 1) % m_state.frames.size();
     }
 }
 
 void AnimationPreview::render() {
-    auto texture = _state.texture_sprite.texture();
+    auto texture = m_state.texture_sprite.texture();
     if (!texture) {
         ImGui::Text("Please select a texture and select some frames to visualize the preview.");
         return;
@@ -35,45 +35,45 @@ void AnimationPreview::render() {
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-    if (ImGui::DragFloat("##FPS", &_state.animation_state.fps, 1.0f, 1.0f, 60.0f, "%.0f FPS")) {
-        _state.animation_state.frame_duration = 1.0f / _state.animation_state.fps;
+    if (ImGui::DragFloat("##FPS", &m_state.animation_state.fps, 1.0f, 1.0f, 60.0f, "%.0f FPS")) {
+        m_state.animation_state.frame_duration = 1.0f / m_state.animation_state.fps;
     }
 
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 100) / 2);
 
     if (ImGui::Button(ICON_FA_BACKWARD, ImVec2(20, 20))) {
-        _state.animation_state.current_frame = 0;
+        m_state.animation_state.current_frame = 0;
     }
     ImGui::SameLine(0, 4);
     if (ImGui::Button(ICON_FA_STEP_BACKWARD, ImVec2(20, 20))) {
-        if (--_state.animation_state.current_frame < 0) _state.animation_state.current_frame = 0;
+        if (--m_state.animation_state.current_frame < 0) m_state.animation_state.current_frame = 0;
     }
     ImGui::SameLine(0, 4);
-    if (ImGui::Button(_state.animation_state.is_playing ? ICON_FA_PAUSE : ICON_FA_PLAY,
+    if (ImGui::Button(m_state.animation_state.is_playing ? ICON_FA_PAUSE : ICON_FA_PLAY,
                       ImVec2(20, 20))) {
-        _state.animation_state.is_playing = !_state.animation_state.is_playing;
+        m_state.animation_state.is_playing = !m_state.animation_state.is_playing;
     }
     ImGui::SameLine(0, 4);
     if (ImGui::Button(ICON_FA_STEP_FORWARD, ImVec2(20, 20))) {
-        _state.animation_state.current_frame =
-            (_state.animation_state.current_frame + 1) % _state.frames.size();
+        m_state.animation_state.current_frame =
+            (m_state.animation_state.current_frame + 1) % m_state.frames.size();
     }
     ImGui::SameLine(0, 4);
     if (ImGui::Button(ICON_FA_FAST_FORWARD, ImVec2(20, 20))) {
-        _state.animation_state.current_frame = _state.frames.size() - 1;
+        m_state.animation_state.current_frame = m_state.frames.size() - 1;
     }
 
     ImGui::End();
 
     if (ImGui::Begin("Frames")) {
-        ImGui::Text("Frames: %zu", _state.frames.size());
+        ImGui::Text("Frames: %zu", m_state.frames.size());
         ImGui::BeginChild("##frames", ImVec2(0, 0), true);
 
         ImVec2 item_size(60, 60);
         float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
-        for (size_t i = 0; i < _state.frames.size(); ++i) {
-            const rendering::Frame& frame = _state.frames[i];
+        for (size_t i = 0; i < m_state.frames.size(); ++i) {
+            const rendering::Frame& frame = m_state.frames[i];
 
             ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
                           static_cast<float>(frame.y) / texture->height()};
@@ -101,7 +101,7 @@ void AnimationPreview::render() {
 
             ImGui::PushID(static_cast<int>(i));
 
-            ImU32 bg_color = (i == _state.animation_state.current_frame)
+            ImU32 bg_color = (i == m_state.animation_state.current_frame)
                                  ? IM_COL32(100, 200, 100, 255)
                                  : IM_COL32(80, 80, 80, 200);
 
@@ -113,7 +113,7 @@ void AnimationPreview::render() {
 
             if (ImGui::InvisibleButton((std::string("##") + std::to_string(i)).c_str(),
                                        item_size)) {
-                _state.animation_state.current_frame = i;
+                m_state.animation_state.current_frame = i;
                 adjust_pan_and_zoom_to_frame(i);
             }
 
@@ -126,7 +126,7 @@ void AnimationPreview::render() {
             ImGui::PopID();
 
             float last_item_x2 = ImGui::GetItemRectMax().x;
-            if (i < _state.frames.size() - 1 && last_item_x2 + item_size.x < window_visible_x2) {
+            if (i < m_state.frames.size() - 1 && last_item_x2 + item_size.x < window_visible_x2) {
                 ImGui::SameLine();
             }
         }
@@ -136,11 +136,11 @@ void AnimationPreview::render() {
     }
 
     if (ImGui::Begin("Current Frame")) {
-        if (_state.frames.empty()) {
+        if (m_state.frames.empty()) {
             ImGui::Text("No frame to preview");
             ImGui::End();
         } else {
-            const rendering::Frame& frame = _state.frames[_state.animation_state.current_frame];
+            const rendering::Frame& frame = m_state.frames[m_state.animation_state.current_frame];
             ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
                           static_cast<float>(frame.y) / texture->height()};
             ImVec2 uv1 = {static_cast<float>(frame.x + frame.w) / texture->width(),
@@ -188,28 +188,28 @@ void AnimationPreview::draw_background_grid(const ImVec2& pos, const ImVec2& siz
 }
 
 void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
-    const rendering::Frame& frame = _state.frames[frame_index];
+    const rendering::Frame& frame = m_state.frames[frame_index];
     float desired_scale = 4.0f;
-    _state.zoom_state.target_scale = desired_scale;
+    m_state.zoom_state.target_scale = desired_scale;
 
     float frame_center_x = frame.x + frame.w / 2.0f;
     float frame_center_y = frame.y + frame.h / 2.0f;
 
-    ImVec2 viewport_size = _state.viewport_state.size;
+    ImVec2 viewport_size = m_state.viewport_state.size;
 
     float pan_offset_x = (viewport_size.x / 2.0f) / desired_scale - frame_center_x;
     float pan_offset_y = (viewport_size.y / 2.0f) / desired_scale - frame_center_y;
 
-    _state.pan_state.target_offset.x = pan_offset_x;
-    _state.pan_state.target_offset.y = pan_offset_y;
+    m_state.pan_state.target_offset.x = pan_offset_x;
+    m_state.pan_state.target_offset.y = pan_offset_y;
 }
 
 void AnimationPreview::delete_frame(size_t frame_index) {
-    if (_state.selected_frames.count(frame_index)) {
-        _state.selected_frames.erase(frame_index);
+    if (m_state.selected_frames.count(frame_index)) {
+        m_state.selected_frames.erase(frame_index);
     }
-    if (frame_index < _state.frames.size()) {
-        _state.frames.erase(_state.frames.begin() + frame_index);
+    if (frame_index < m_state.frames.size()) {
+        m_state.frames.erase(m_state.frames.begin() + frame_index);
     }
 }
 }  // namespace components

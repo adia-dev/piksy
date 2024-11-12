@@ -26,45 +26,45 @@ namespace components {
 Viewport::Viewport(core::State& state, rendering::Renderer& renderer,
                    managers::ResourceManager& resource_manager)
     : UIComponent(state),
-      _renderer(renderer),
-      _resource_manager(resource_manager),
-      _render_texture(nullptr),
-      _viewport_size(800, 600) {
-    create_render_texture(static_cast<int>(_viewport_size.x), static_cast<int>(_viewport_size.y));
+      m_renderer(renderer),
+      m_resource_manager(resource_manager),
+      m_render_texture(nullptr),
+      m_viewport_size(800, 600) {
+    create_render_texture(static_cast<int>(m_viewport_size.x), static_cast<int>(m_viewport_size.y));
 
     // NOTE: DON'T COMMIT
     // UPADTE: You commited it dumbass...
-    if (_state.texture_sprite.texture() != nullptr) {
+    if (m_state.texture_sprite.texture() != nullptr) {
         commands::SwapTextureCommand command(
             {255, 255, 255, 255},
             SDL_Color{
-                static_cast<Uint8>(_state.replacement_color[0] * 255),
-                static_cast<Uint8>(_state.replacement_color[1] * 255),
-                static_cast<Uint8>(_state.replacement_color[2] * 255),
-                static_cast<Uint8>(_state.replacement_color[3] * 255),
+                static_cast<Uint8>(m_state.replacement_color[0] * 255),
+                static_cast<Uint8>(m_state.replacement_color[1] * 255),
+                static_cast<Uint8>(m_state.replacement_color[2] * 255),
+                static_cast<Uint8>(m_state.replacement_color[3] * 255),
             },
-            _state.texture_sprite.texture());
+            m_state.texture_sprite.texture());
         command.execute();
     }
 }
 
 Viewport::~Viewport() {
-    if (_render_texture) {
-        SDL_DestroyTexture(_render_texture);
-        _render_texture = nullptr;
+    if (m_render_texture) {
+        SDL_DestroyTexture(m_render_texture);
+        m_render_texture = nullptr;
     }
 }
 
 void Viewport::create_render_texture(int width, int height) {
-    if (_render_texture) {
-        SDL_DestroyTexture(_render_texture);
-        _render_texture = nullptr;
+    if (m_render_texture) {
+        SDL_DestroyTexture(m_render_texture);
+        m_render_texture = nullptr;
     }
 
-    _render_texture = SDL_CreateTexture(_renderer.get(), SDL_PIXELFORMAT_RGBA8888,
+    m_render_texture = SDL_CreateTexture(m_renderer.get(), SDL_PIXELFORMAT_RGBA8888,
                                         SDL_TEXTUREACCESS_TARGET, width, height);
 
-    if (!_render_texture) {
+    if (!m_render_texture) {
         core::Logger::fatal("Failed to create render texture: %s", SDL_GetError());
     }
 }
@@ -73,30 +73,30 @@ void Viewport::update() {
     update_zoom();
     update_pan();
 
-    if (_state.mouse_state.is_pressed && !_state.mouse_state.is_panning) {
+    if (m_state.mouse_state.is_pressed && !m_state.mouse_state.is_panning) {
         process_selection();
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_Backspace)) {
-        if (!_state.selected_frames.empty()) {
-            for (size_t i : _state.selected_frames) {
-                if (i < _state.frames.size()) {
-                    _state.frames.erase(_state.frames.begin() + i);
+        if (!m_state.selected_frames.empty()) {
+            for (size_t i : m_state.selected_frames) {
+                if (i < m_state.frames.size()) {
+                    m_state.frames.erase(m_state.frames.begin() + i);
                 }
             }
-            _state.selected_frames.clear();
+            m_state.selected_frames.clear();
         }
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_Escape)) {
-        switch (_state.current_tool) {
+        switch (m_state.current_tool) {
             case core::Tool::SELECT:
-                _state.selected_frames.clear();
+                m_state.selected_frames.clear();
                 break;
             case core::Tool::EXTRACT:
-                _state.animation_state.current_frame = 0;
-                _state.frames.clear();
-                _state.selected_frames.clear();
+                m_state.animation_state.current_frame = 0;
+                m_state.frames.clear();
+                m_state.selected_frames.clear();
                 break;
             default:
                 break;
@@ -114,30 +114,30 @@ void Viewport::render() {
     render_toolbar();
 
     ImVec2 viewport_size = ImGui::GetContentRegionAvail();
-    if (viewport_size.x != _viewport_size.x || viewport_size.y != _viewport_size.y) {
-        _state.viewport_state.size = viewport_size;
-        _viewport_size = viewport_size;
-        create_render_texture(static_cast<int>(_viewport_size.x),
-                              static_cast<int>(_viewport_size.y));
+    if (viewport_size.x != m_viewport_size.x || viewport_size.y != m_viewport_size.y) {
+        m_state.viewport_state.size = viewport_size;
+        m_viewport_size = viewport_size;
+        create_render_texture(static_cast<int>(m_viewport_size.x),
+                              static_cast<int>(m_viewport_size.y));
     }
 
-    SDL_SetRenderTarget(_renderer.get(), _render_texture);
+    SDL_SetRenderTarget(m_renderer.get(), m_render_texture);
 
-    SDL_SetRenderDrawColor(_renderer.get(), 0, 0, 0, 255);
-    SDL_RenderClear(_renderer.get());
+    SDL_SetRenderDrawColor(m_renderer.get(), 0, 0, 0, 255);
+    SDL_RenderClear(m_renderer.get());
 
     render_grid_background();
     render_texture();
 
-    if (_state.mouse_state.is_pressed && !_state.mouse_state.is_panning) {
+    if (m_state.mouse_state.is_pressed && !m_state.mouse_state.is_panning) {
         render_selection_rect();
     }
 
     render_frames();
 
-    SDL_SetRenderTarget(_renderer.get(), nullptr);
+    SDL_SetRenderTarget(m_renderer.get(), nullptr);
 
-    ImGui::Image((ImTextureID)(intptr_t)_render_texture, _viewport_size);
+    ImGui::Image((ImTextureID)(intptr_t)m_render_texture, m_viewport_size);
 
     process_mouse_input();
 
@@ -152,7 +152,7 @@ void Viewport::render() {
 void Viewport::notify_dropped_file(const std::string& dropped_file_path) {
     core::Logger::debug("Dropped file into the Viewport: %s", dropped_file_path.c_str());
     try {
-        _state.texture_sprite.set_texture(_resource_manager.get_texture(dropped_file_path));
+        m_state.texture_sprite.set_texture(m_resource_manager.get_texture(dropped_file_path));
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());
     }
@@ -163,22 +163,22 @@ void Viewport::process_mouse_input() {
         ImVec2 mouse_pos = ImGui::GetMousePos();
         ImVec2 image_pos = ImGui::GetItemRectMin();
         ImVec2 relative_pos = {mouse_pos.x - image_pos.x, mouse_pos.y - image_pos.y};
-        _state.mouse_state.current_pos = relative_pos;
+        m_state.mouse_state.current_pos = relative_pos;
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            _state.mouse_state.start_pos = _state.mouse_state.current_pos;
-            _state.mouse_state.is_pressed = true;
-            handle_click(_state.mouse_state.current_pos.x, _state.mouse_state.current_pos.y);
+            m_state.mouse_state.start_pos = m_state.mouse_state.current_pos;
+            m_state.mouse_state.is_pressed = true;
+            handle_click(m_state.mouse_state.current_pos.x, m_state.mouse_state.current_pos.y);
         }
 
-        _state.mouse_state.is_pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+        m_state.mouse_state.is_pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
         process_zoom();
         process_panning();
 
     } else {
-        _state.mouse_state.is_pressed = false;
-        _state.mouse_state.is_panning = false;
+        m_state.mouse_state.is_pressed = false;
+        m_state.mouse_state.is_panning = false;
     }
 }
 
@@ -186,9 +186,9 @@ void Viewport::process_zoom() {
     float wheel = ImGui::GetIO().MouseWheel;
 
     float zoom_accel = wheel;
-    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) || _state.current_tool == core::Tool::ZOOM) {
-        float drag_y = _state.mouse_state.is_pressed *
-                       (_state.mouse_state.current_pos.y - _state.mouse_state.start_pos.y);
+    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) || m_state.current_tool == core::Tool::ZOOM) {
+        float drag_y = m_state.mouse_state.is_pressed *
+                       (m_state.mouse_state.current_pos.y - m_state.mouse_state.start_pos.y);
 
         // TODO: Make the drag y factor a variable
         if (std::fabs(drag_y * 0.01f) > std::fabs(wheel)) {
@@ -197,69 +197,69 @@ void Viewport::process_zoom() {
     }
 
     if (zoom_accel != 0.0f) {
-        _state.zoom_state.target_scale += zoom_accel * _state.zoom_state.zoom_speed;
-        _state.zoom_state.target_scale = std::clamp(_state.zoom_state.target_scale, 0.1f, 10.0f);
+        m_state.zoom_state.target_scale += zoom_accel * m_state.zoom_state.zoom_speed;
+        m_state.zoom_state.target_scale = std::clamp(m_state.zoom_state.target_scale, 0.1f, 10.0f);
     }
 }
 
 void Viewport::process_panning() {
-    if (_state.mouse_state.is_pressed &&
-        (_state.current_tool == core::Tool::PAN || ImGui::IsKeyDown(ImGuiKey_LeftShift))) {
-        ImVec2 delta = {(_state.mouse_state.current_pos.x - _state.mouse_state.start_pos.x) /
-                            _state.zoom_state.current_scale,
-                        (_state.mouse_state.current_pos.y - _state.mouse_state.start_pos.y) /
-                            _state.zoom_state.current_scale};
+    if (m_state.mouse_state.is_pressed &&
+        (m_state.current_tool == core::Tool::PAN || ImGui::IsKeyDown(ImGuiKey_LeftShift))) {
+        ImVec2 delta = {(m_state.mouse_state.current_pos.x - m_state.mouse_state.start_pos.x) /
+                            m_state.zoom_state.current_scale,
+                        (m_state.mouse_state.current_pos.y - m_state.mouse_state.start_pos.y) /
+                            m_state.zoom_state.current_scale};
 
-        _state.pan_state.target_offset.x += delta.x;
-        _state.pan_state.target_offset.y += delta.y;
+        m_state.pan_state.target_offset.x += delta.x;
+        m_state.pan_state.target_offset.y += delta.y;
 
-        _state.mouse_state.start_pos = _state.mouse_state.current_pos;
-        _state.mouse_state.is_panning = true;
+        m_state.mouse_state.start_pos = m_state.mouse_state.current_pos;
+        m_state.mouse_state.is_panning = true;
     } else {
-        _state.mouse_state.is_panning = false;
+        m_state.mouse_state.is_panning = false;
     }
 }
 
 void Viewport::update_zoom() {
-    _state.zoom_state.current_scale =
-        utils::maths::lerp(_state.zoom_state.current_scale, _state.zoom_state.target_scale, 0.1f);
+    m_state.zoom_state.current_scale =
+        utils::maths::lerp(m_state.zoom_state.current_scale, m_state.zoom_state.target_scale, 0.1f);
 }
 
 void Viewport::update_pan() {
-    _state.pan_state.current_offset =
-        utils::maths::lerp(_state.pan_state.current_offset, _state.pan_state.target_offset, 0.1f);
+    m_state.pan_state.current_offset =
+        utils::maths::lerp(m_state.pan_state.current_offset, m_state.pan_state.target_offset, 0.1f);
 }
 
 void Viewport::process_selection() {
-    float x0 = (_state.mouse_state.start_pos.x / _state.zoom_state.current_scale) -
-               _state.pan_state.current_offset.x;
-    float y0 = (_state.mouse_state.start_pos.y / _state.zoom_state.current_scale) -
-               _state.pan_state.current_offset.y;
-    float x1 = (_state.mouse_state.current_pos.x / _state.zoom_state.current_scale) -
-               _state.pan_state.current_offset.x;
-    float y1 = (_state.mouse_state.current_pos.y / _state.zoom_state.current_scale) -
-               _state.pan_state.current_offset.y;
+    float x0 = (m_state.mouse_state.start_pos.x / m_state.zoom_state.current_scale) -
+               m_state.pan_state.current_offset.x;
+    float y0 = (m_state.mouse_state.start_pos.y / m_state.zoom_state.current_scale) -
+               m_state.pan_state.current_offset.y;
+    float x1 = (m_state.mouse_state.current_pos.x / m_state.zoom_state.current_scale) -
+               m_state.pan_state.current_offset.x;
+    float y1 = (m_state.mouse_state.current_pos.y / m_state.zoom_state.current_scale) -
+               m_state.pan_state.current_offset.y;
 
     SDL_Rect selection_world_rect = {
         static_cast<int>(std::min(x0, x1)), static_cast<int>(std::min(y0, y1)),
         static_cast<int>(std::abs(x1 - x0)), static_cast<int>(std::abs(y1 - y0))};
 
-    switch (_state.current_tool) {
+    switch (m_state.current_tool) {
         case core::Tool::EXTRACT: {
-            if (!_state.texture_sprite.texture()) return;
+            if (!m_state.texture_sprite.texture()) return;
 
             commands::FrameExtractionCommand command(
-                selection_world_rect, _state.texture_sprite.texture(), _state.frames);
+                selection_world_rect, m_state.texture_sprite.texture(), m_state.frames);
             command.execute();
         } break;
         case core::Tool::SELECT: {
-            _state.selected_frames.clear();
+            m_state.selected_frames.clear();
 
-            for (size_t i = 0; i < _state.frames.size(); ++i) {
-                const rendering::Frame& frame = _state.frames[i];
+            for (size_t i = 0; i < m_state.frames.size(); ++i) {
+                const rendering::Frame& frame = m_state.frames[i];
                 const SDL_Rect frame_rect{frame.x, frame.y, frame.w, frame.h};
                 if (SDL_HasIntersection(&frame_rect, &selection_world_rect)) {
-                    _state.selected_frames.insert(i);
+                    m_state.selected_frames.insert(i);
                 }
             }
         } break;
@@ -269,10 +269,10 @@ void Viewport::process_selection() {
 }
 
 void Viewport::render_texture() {
-    if (_state.texture_sprite.texture() != nullptr) {
-        _state.texture_sprite.render(_renderer.get(), _state.zoom_state.current_scale,
-                                     _state.pan_state.current_offset.x,
-                                     _state.pan_state.current_offset.y);
+    if (m_state.texture_sprite.texture() != nullptr) {
+        m_state.texture_sprite.render(m_renderer.get(), m_state.zoom_state.current_scale,
+                                     m_state.pan_state.current_offset.x,
+                                     m_state.pan_state.current_offset.y);
     } else {
         render_placeholder_text();
     }
@@ -282,43 +282,43 @@ void Viewport::render_cursor_hud() {
     ImVec2 mouse_pos = ImGui::GetMousePos();
 
     if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) ||
-        std::fabs(_state.zoom_state.target_scale - _state.zoom_state.current_scale) >= 0.001f) {
+        std::fabs(m_state.zoom_state.target_scale - m_state.zoom_state.current_scale) >= 0.001f) {
         ImVec2 text_offset(5, -10);
         ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
         ImGui::SetCursorScreenPos(text_pos);
-        ImGui::Text("%s %.2f", ICON_FA_SEARCH, _state.zoom_state.current_scale);
+        ImGui::Text("%s %.2f", ICON_FA_SEARCH, m_state.zoom_state.current_scale);
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift) ||
-        (std::fabs(_state.pan_state.current_offset.x - _state.pan_state.target_offset.x) >=
+        (std::fabs(m_state.pan_state.current_offset.x - m_state.pan_state.target_offset.x) >=
              0.001f &&
-         std::fabs(_state.pan_state.current_offset.y - _state.pan_state.target_offset.y) >=
+         std::fabs(m_state.pan_state.current_offset.y - m_state.pan_state.target_offset.y) >=
              0.001f)) {
         ImVec2 text_offset(7, 10);
         ImVec2 text_pos = ImVec2(mouse_pos.x + text_offset.x, mouse_pos.y + text_offset.y);
         ImGui::SetCursorScreenPos(text_pos);
-        ImGui::Text("%s x: %.2f, y: %.2f", ICON_FA_ARROWS, _state.pan_state.current_offset.x,
-                    _state.pan_state.current_offset.y);
+        ImGui::Text("%s x: %.2f, y: %.2f", ICON_FA_ARROWS, m_state.pan_state.current_offset.x,
+                    m_state.pan_state.current_offset.y);
     }
 }
 
 void Viewport::render_placeholder_text() {
     auto font =
-        _resource_manager.get_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
+        m_resource_manager.get_font(std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf");
     if (font != nullptr) {
         const char* placeholder_text = "No texture loaded. Please insert a texture.";
         SDL_Color text_color{255, 255, 255, 255};
         SDL_Surface* text_surface =
             TTF_RenderText_Blended(font.get()->get(), placeholder_text, text_color);
         if (text_surface != nullptr) {
-            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(_renderer.get(), text_surface);
+            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(m_renderer.get(), text_surface);
             if (text_texture != nullptr) {
                 int text_width = text_surface->w;
                 int text_height = text_surface->h;
-                SDL_Rect dest_rect = {static_cast<int>((_viewport_size.x - text_width) / 2),
-                                      static_cast<int>((_viewport_size.y - text_height) / 2),
+                SDL_Rect dest_rect = {static_cast<int>((m_viewport_size.x - text_width) / 2),
+                                      static_cast<int>((m_viewport_size.y - text_height) / 2),
                                       text_width, text_height};
-                SDL_RenderCopy(_renderer.get(), text_texture, nullptr, &dest_rect);
+                SDL_RenderCopy(m_renderer.get(), text_texture, nullptr, &dest_rect);
                 SDL_DestroyTexture(text_texture);
             }
             SDL_FreeSurface(text_surface);
@@ -327,49 +327,49 @@ void Viewport::render_placeholder_text() {
 }
 
 void Viewport::render_selection_rect() {
-    int start_x = static_cast<int>(_state.mouse_state.start_pos.x);
-    int start_y = static_cast<int>(_state.mouse_state.start_pos.y);
-    int current_x = static_cast<int>(_state.mouse_state.current_pos.x);
-    int current_y = static_cast<int>(_state.mouse_state.current_pos.y);
+    int start_x = static_cast<int>(m_state.mouse_state.start_pos.x);
+    int start_y = static_cast<int>(m_state.mouse_state.start_pos.y);
+    int current_x = static_cast<int>(m_state.mouse_state.current_pos.x);
+    int current_y = static_cast<int>(m_state.mouse_state.current_pos.y);
 
-    _selection_rect = {std::min(start_x, current_x), std::min(start_y, current_y),
+    m_selection_rect = {std::min(start_x, current_x), std::min(start_y, current_y),
                        std::abs(current_x - start_x), std::abs(current_y - start_y)};
 
-    SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 255);
-    SDL_RenderDrawRect(_renderer.get(), &_selection_rect);
-    SDL_SetRenderDrawColor(_renderer.get(), 255, 255, 0, 25);
-    SDL_RenderFillRect(_renderer.get(), &_selection_rect);
+    SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 0, 255);
+    SDL_RenderDrawRect(m_renderer.get(), &m_selection_rect);
+    SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 0, 25);
+    SDL_RenderFillRect(m_renderer.get(), &m_selection_rect);
 }
 
 void Viewport::render_grid_background() {
-    SDL_SetRenderDrawColor(_renderer.get(), 33, 33, 33, 155);
+    SDL_SetRenderDrawColor(m_renderer.get(), 33, 33, 33, 155);
 
     float scaled_grid_cell_size =
-        std::max(_state.viewport_state.grid_cell_size * _state.zoom_state.current_scale, 1.0f);
+        std::max(m_state.viewport_state.grid_cell_size * m_state.zoom_state.current_scale, 1.0f);
 
-    float offset_x = fmod(_state.pan_state.current_offset.x * _state.zoom_state.current_scale,
+    float offset_x = fmod(m_state.pan_state.current_offset.x * m_state.zoom_state.current_scale,
                           scaled_grid_cell_size);
-    float offset_y = fmod(_state.pan_state.current_offset.y * _state.zoom_state.current_scale,
+    float offset_y = fmod(m_state.pan_state.current_offset.y * m_state.zoom_state.current_scale,
                           scaled_grid_cell_size);
 
     int num_vertical_lines =
-        static_cast<int>(std::ceil(_viewport_size.x / scaled_grid_cell_size)) + 1;
+        static_cast<int>(std::ceil(m_viewport_size.x / scaled_grid_cell_size)) + 1;
     int num_horizontal_lines =
-        static_cast<int>(std::ceil(_viewport_size.y / scaled_grid_cell_size)) + 1;
+        static_cast<int>(std::ceil(m_viewport_size.y / scaled_grid_cell_size)) + 1;
 
     for (int i = 0; i < num_vertical_lines; ++i) {
         float x = offset_x + i * scaled_grid_cell_size;
-        if (x >= 0 && x <= _viewport_size.x) {
-            SDL_RenderDrawLine(_renderer.get(), static_cast<int>(x), 0, static_cast<int>(x),
-                               static_cast<int>(_viewport_size.y));
+        if (x >= 0 && x <= m_viewport_size.x) {
+            SDL_RenderDrawLine(m_renderer.get(), static_cast<int>(x), 0, static_cast<int>(x),
+                               static_cast<int>(m_viewport_size.y));
         }
     }
 
     for (int j = 0; j < num_horizontal_lines; ++j) {
         float y = offset_y + j * scaled_grid_cell_size;
-        if (y >= 0 && y <= _viewport_size.y) {
-            SDL_RenderDrawLine(_renderer.get(), 0, static_cast<int>(y),
-                               static_cast<int>(_viewport_size.x), static_cast<int>(y));
+        if (y >= 0 && y <= m_viewport_size.y) {
+            SDL_RenderDrawLine(m_renderer.get(), 0, static_cast<int>(y),
+                               static_cast<int>(m_viewport_size.x), static_cast<int>(y));
         }
     }
 }
@@ -381,45 +381,45 @@ void Viewport::render_frames() const {
     const SDL_Color default_frame_color{135, 235, 177, 155};
 
     // Pre-compute common scaling factor for efficiency
-    const float scale = _state.zoom_state.current_scale;
-    const ImVec2 offset = _state.pan_state.current_offset;
+    const float scale = m_state.zoom_state.current_scale;
+    const ImVec2 offset = m_state.pan_state.current_offset;
 
     // Render loop with reduced computation
-    for (size_t i = 0; i < _state.frames.size(); ++i) {
-        const rendering::Frame& frame = _state.frames[i];
+    for (size_t i = 0; i < m_state.frames.size(); ++i) {
+        const rendering::Frame& frame = m_state.frames[i];
         SDL_Rect render_frame_rect{static_cast<int>((frame.x + offset.x) * scale),
                                    static_cast<int>((frame.y + offset.y) * scale),
                                    static_cast<int>(frame.w * scale),
                                    static_cast<int>(frame.h * scale)};
 
         // Set color based on the current context
-        if (i == _state.animation_state.current_frame) {
-            SDL_SetRenderDrawColor(_renderer.get(), current_frame_color.r, current_frame_color.g,
+        if (i == m_state.animation_state.current_frame) {
+            SDL_SetRenderDrawColor(m_renderer.get(), current_frame_color.r, current_frame_color.g,
                                    current_frame_color.b, current_frame_color.a);
-        } else if (_state.selected_frames.count(i)) {
-            SDL_SetRenderDrawColor(_renderer.get(), selected_frame_color.r, selected_frame_color.g,
+        } else if (m_state.selected_frames.count(i)) {
+            SDL_SetRenderDrawColor(m_renderer.get(), selected_frame_color.r, selected_frame_color.g,
                                    selected_frame_color.b, selected_frame_color.a);
         } else {
-            SDL_SetRenderDrawColor(_renderer.get(), default_frame_color.r, default_frame_color.g,
+            SDL_SetRenderDrawColor(m_renderer.get(), default_frame_color.r, default_frame_color.g,
                                    default_frame_color.b, default_frame_color.a);
         }
 
-        SDL_RenderDrawRect(_renderer.get(), &render_frame_rect);
+        SDL_RenderDrawRect(m_renderer.get(), &render_frame_rect);
     }
 }
 
 void Viewport::handle_click(float x, float y) {
-    float world_x = (x / _state.zoom_state.current_scale) - _state.pan_state.current_offset.x;
-    float world_y = (y / _state.zoom_state.current_scale) - _state.pan_state.current_offset.y;
+    float world_x = (x / m_state.zoom_state.current_scale) - m_state.pan_state.current_offset.x;
+    float world_y = (y / m_state.zoom_state.current_scale) - m_state.pan_state.current_offset.y;
 
-    auto& sprite = _state.texture_sprite;
+    auto& sprite = m_state.texture_sprite;
     SDL_Rect rect = sprite.rect();
 
     float texture_x = world_x - rect.x;
     float texture_y = world_y - rect.y;
 
     if (texture_x >= 0 && texture_x < rect.w && texture_y >= 0 && texture_y < rect.h) {
-        switch (_state.current_tool) {
+        switch (m_state.current_tool) {
             case core::Tool::SELECT:
                 sprite.set_selected(true);
                 break;
@@ -429,12 +429,12 @@ void Viewport::handle_click(float x, float y) {
                 commands::SwapTextureCommand command(
                     pixel_color,
                     SDL_Color{
-                        static_cast<Uint8>(_state.replacement_color[0] * 255),
-                        static_cast<Uint8>(_state.replacement_color[1] * 255),
-                        static_cast<Uint8>(_state.replacement_color[2] * 255),
-                        static_cast<Uint8>(_state.replacement_color[3] * 255),
+                        static_cast<Uint8>(m_state.replacement_color[0] * 255),
+                        static_cast<Uint8>(m_state.replacement_color[1] * 255),
+                        static_cast<Uint8>(m_state.replacement_color[2] * 255),
+                        static_cast<Uint8>(m_state.replacement_color[3] * 255),
                     },
-                    _state.texture_sprite.texture());
+                    m_state.texture_sprite.texture());
                 command.execute();
             } break;
             default:
@@ -499,15 +499,15 @@ void Viewport::render_toolbar() {
 
         if (tool_idx > 0) ImGui::SameLine();
 
-        if (tool == _state.current_tool) {
+        if (tool == m_state.current_tool) {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 125 / 255.0f, 155 / 255.0f, 0.73f));
             if (ImGui::Button((std::string(icon) + " " + label).c_str())) {
-                _state.current_tool = tool;
+                m_state.current_tool = tool;
             }
             ImGui::PopStyleColor();
         } else {
             if (ImGui::Button(label)) {
-                _state.current_tool = tool;
+                m_state.current_tool = tool;
             }
         }
     }

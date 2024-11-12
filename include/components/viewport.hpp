@@ -54,13 +54,13 @@ class Viewport : public UIComponent {
     void render_toolbar();
 
    private:
-    rendering::Renderer& _renderer;
-    managers::ResourceManager& _resource_manager;
-    SDL_Texture* _render_texture = nullptr;
+    rendering::Renderer& m_renderer;
+    managers::ResourceManager& m_resource_manager;
+    SDL_Texture* m_render_texture = nullptr;
 
-    ImVec2 _viewport_size;
-    SDL_Rect _selection_rect;
-    ImRect _viewport_image_rect;
+    ImVec2 m_viewport_size;
+    SDL_Rect m_selection_rect;
+    ImRect m_viewport_image_rect;
 };
 }  // namespace components
 }  // namespace piksy

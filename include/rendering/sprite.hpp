@@ -37,9 +37,9 @@ class Sprite {
                 int offset_y = 0.0f) const;
 
    private:
-    std::shared_ptr<Texture2D> _texture;
-    SDL_Rect _rect, _frame_rect;
-    bool _selected = false;
+    std::shared_ptr<Texture2D> m_texture;
+    SDL_Rect m_rect, m_frame_rect;
+    bool m_selected = false;
 };
 }  // namespace rendering
 }  // namespace piksy

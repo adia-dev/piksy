@@ -19,16 +19,17 @@ class Console : public UIComponent {
     void render_console();
 
    private:
-    ImGuiTextFilter _filter;
-    bool _auto_scroll = true;
-    bool _scroll_to_bottom = false;
+    ImGuiTextFilter m_filter;
+    bool m_auto_scroll = true;
+    bool m_scroll_to_bottom = false;
 
-    bool _show_trace = false;
-    bool _show_debug = true;
-    bool _show_info = true;
-    bool _show_warn = true;
-    bool _show_error = true;
-    bool _show_fatal = true;
+    // TODO: Make this a bit field
+    bool m_show_trace = false;
+    bool m_show_debug = true;
+    bool m_show_info = true;
+    bool m_show_warn = true;
+    bool m_show_error = true;
+    bool m_show_fatal = true;
 };
 
 }  // namespace components

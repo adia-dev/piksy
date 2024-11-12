@@ -13,9 +13,9 @@ namespace piksy {
 namespace components {
 
 Project::Project(core::State& state, managers::ResourceManager& resource_manager)
-    : UIComponent(state), _resource_manager(resource_manager) {
+    : UIComponent(state), m_resource_manager(resource_manager) {
     build_file_extension_icons_map();
-    build_directory_cache(_state.current_path);
+    build_directory_cache(m_state.current_path);
 }
 
 void Project::update() {}
@@ -33,8 +33,8 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries) {
             if (ImGui::Selectable(("##" + entry.path.string() + "/").c_str(), entry.is_open,
                                   ImGuiSelectableFlags_DontClosePopups)) {
                 if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) {
-                    _state.current_path = entry.path;
-                    build_directory_cache(_state.current_path);
+                    m_state.current_path = entry.path;
+                    build_directory_cache(m_state.current_path);
                     return;
                 } else {
                     entry.is_open = !entry.is_open;
@@ -67,13 +67,13 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries) {
 
 void Project::render_file_explorer() {
     ImGui::BeginChild("File Browser", ImVec2(0, 0), false);
-    render_directory_entries(_directory_cache);
+    render_directory_entries(m_directory_cache);
     ImGui::EndChild();
 }
 
 bool Project::try_select_texture(const std::filesystem::path& file_path) {
     try {
-        _state.texture_sprite.set_texture(_resource_manager.get_texture(file_path.string()));
+        m_state.texture_sprite.set_texture(m_resource_manager.get_texture(file_path.string()));
         return true;
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());
@@ -82,7 +82,7 @@ bool Project::try_select_texture(const std::filesystem::path& file_path) {
 }
 
 void Project::build_directory_cache(const fs::path& root_path) {
-    _directory_cache.clear();
+    m_directory_cache.clear();
 
     std::function<void(const fs::path&, std::vector<DirectoryEntry>&)> populate_cache =
         [&](const fs::path& path, std::vector<DirectoryEntry>& entries) {
@@ -95,7 +95,7 @@ void Project::build_directory_cache(const fs::path& root_path) {
             }
         };
 
-    populate_cache(root_path, _directory_cache);
+    populate_cache(root_path, m_directory_cache);
 }
 
 void Project::build_file_extension_icons_map() {
