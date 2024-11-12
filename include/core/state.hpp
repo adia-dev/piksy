@@ -152,7 +152,6 @@ struct State {
     std::unordered_set<size_t> selected_frames;
 
     Tool current_tool = Tool::PAN;
-
 };
 }  // namespace core
 }  // namespace piksy

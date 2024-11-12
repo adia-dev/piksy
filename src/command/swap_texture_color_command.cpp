@@ -1,4 +1,4 @@
-#include "swap_texture_color_command.hpp"
+#include <command/swap_texture_color_command.hpp>
 
 namespace piksy {
 namespace commands {

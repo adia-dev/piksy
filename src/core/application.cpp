@@ -18,6 +18,7 @@
 #include <string>
 
 #include "SDL_render.h"
+#include "command/save_command.hpp"
 
 namespace piksy {
 namespace core {
@@ -243,8 +244,9 @@ void Application::render() {
                     if (ImGui::MenuItem("Open...", "Ctrl+O")) {
                         // TODO: Handle opening a project
                     }
-                    if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                        // TODO: Handle saving the project
+                    if (ImGui::MenuItem("Save", "Cmd+S")) {
+                        commands::SaveCommand command(_state, _config.app_config.save_file);
+                        command.execute();
                     }
                     if (ImGui::MenuItem("Exit", "Alt+F4")) {
                         shutdown();

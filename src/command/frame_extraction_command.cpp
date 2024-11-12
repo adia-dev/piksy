@@ -1,8 +1,6 @@
-#include "frame_extraction_command.hpp"
-
+#include <command/frame_extraction_command.hpp>
 #include <core/logger.hpp>
-
-#include "rendering/frame.hpp"
+#include <rendering/frame.hpp>
 
 namespace piksy {
 namespace commands {

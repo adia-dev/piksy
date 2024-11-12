@@ -203,10 +203,15 @@ struct ImGuiConfig {
     }
 };
 
+struct AppConfig {
+    std::string save_file = "./project.pkproj";
+};
+
 struct Config {
     WindowConfig window_config;
     ImGuiConfig imgui_config;
     LoggerConfig logger_config;
+    AppConfig app_config;
 
     Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER;
 };
