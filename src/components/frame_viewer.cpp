@@ -13,19 +13,21 @@ namespace components {
 FrameViewer::FrameViewer(core::State& state) : UIComponent(state) {}
 
 void FrameViewer::update() {
-    if (!m_state.animation_state.is_playing || m_state.frames.empty()) return;
+    auto& animation = m_state.animation_state.get_current_animation();
+    if (!m_state.animation_state.is_playing || animation.frames.empty()) return;
 
     m_state.animation_state.timer += m_state.delta_time;
 
     if (m_state.animation_state.timer >= m_state.animation_state.frame_duration) {
         m_state.animation_state.timer -= m_state.animation_state.frame_duration;
         m_state.animation_state.current_frame =
-            (m_state.animation_state.current_frame + 1) % m_state.frames.size();
+            (m_state.animation_state.current_frame + 1) % animation.frames.size();
     }
 }
 
 void FrameViewer::render() {
     auto texture = m_state.texture_sprite.texture();
+    auto& animation = m_state.animation_state.get_current_animation();
     if (!texture) {
         ImGui::Text("Please select a texture and select some frames to visualize the preview.");
         return;
@@ -56,24 +58,24 @@ void FrameViewer::render() {
     ImGui::SameLine(0, 4);
     if (ImGui::Button(ICON_FA_STEP_FORWARD, ImVec2(20, 20))) {
         m_state.animation_state.current_frame =
-            (m_state.animation_state.current_frame + 1) % m_state.frames.size();
+            (m_state.animation_state.current_frame + 1) % animation.frames.size();
     }
     ImGui::SameLine(0, 4);
     if (ImGui::Button(ICON_FA_FAST_FORWARD, ImVec2(20, 20))) {
-        m_state.animation_state.current_frame = m_state.frames.size() - 1;
+        m_state.animation_state.current_frame = animation.frames.size() - 1;
     }
 
     ImGui::End();
 
     if (ImGui::Begin("Frames")) {
-        ImGui::Text("Frames: %zu", m_state.frames.size());
+        ImGui::Text("Frames: %zu", animation.frames.size());
         ImGui::BeginChild("##frames", ImVec2(0, 0), true);
 
         ImVec2 item_size(60, 60);
         float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
-        for (size_t i = 0; i < m_state.frames.size(); ++i) {
-            const rendering::Frame& frame = m_state.frames[i];
+        for (size_t i = 0; i < animation.frames.size(); ++i) {
+            const rendering::Frame& frame = animation.frames[i];
 
             ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
                           static_cast<float>(frame.y) / texture->height()};
@@ -126,7 +128,7 @@ void FrameViewer::render() {
             ImGui::PopID();
 
             float last_item_x2 = ImGui::GetItemRectMax().x;
-            if (i < m_state.frames.size() - 1 && last_item_x2 + item_size.x < window_visible_x2) {
+            if (i < animation.frames.size() - 1 && last_item_x2 + item_size.x < window_visible_x2) {
                 ImGui::SameLine();
             }
         }
@@ -136,11 +138,11 @@ void FrameViewer::render() {
     }
 
     if (ImGui::Begin("Current Frame")) {
-        if (m_state.frames.empty()) {
+        if (animation.frames.empty()) {
             ImGui::Text("No frame to preview");
             ImGui::End();
         } else {
-            const rendering::Frame& frame = m_state.frames[m_state.animation_state.current_frame];
+            const rendering::Frame& frame = animation.frames[m_state.animation_state.current_frame];
             ImVec2 uv0 = {static_cast<float>(frame.x) / texture->width(),
                           static_cast<float>(frame.y) / texture->height()};
             ImVec2 uv1 = {static_cast<float>(frame.x + frame.w) / texture->width(),
@@ -189,7 +191,8 @@ void FrameViewer::render_background_grid(const ImVec2& size) const {
 }
 
 void FrameViewer::adjust_pan_and_zoom_to_frame(int frame_index) {
-    const rendering::Frame& frame = m_state.frames[frame_index];
+    auto& animation = m_state.animation_state.get_current_animation();
+    const rendering::Frame& frame = animation.frames[frame_index];
     float desired_scale = 4.0f;
     m_state.zoom_state.target_scale = desired_scale;
 
@@ -206,11 +209,13 @@ void FrameViewer::adjust_pan_and_zoom_to_frame(int frame_index) {
 }
 
 void FrameViewer::delete_frame(size_t frame_index) {
-    if (m_state.selected_frames.count(frame_index)) {
-        m_state.selected_frames.erase(frame_index);
+    if (m_state.animation_state.selected_frames.count(frame_index)) {
+        m_state.animation_state.selected_frames.erase(frame_index);
     }
-    if (frame_index < m_state.frames.size()) {
-        m_state.frames.erase(m_state.frames.begin() + frame_index);
+
+    auto& animation = m_state.animation_state.get_current_animation();
+    if (frame_index < animation.frames.size()) {
+        animation.frames.erase(animation.frames.begin() + frame_index);
     }
 }
 }  // namespace components

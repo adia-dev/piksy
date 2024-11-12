@@ -15,6 +15,8 @@ class AnimationPreview : public UIComponent {
    private:
     void adjust_pan_and_zoom_to_frame(int frame_index);
     void delete_frame(size_t frame_index);
+    void render_frame_slider(const rendering::Animation& animation);
+    void render_animation_combo(const char* animation_label);
 
     float target_frame_offset = 0.0f;   // Target frame offset for scrolling
     float current_frame_offset = 0.0f;  // Current frame offset for lerping

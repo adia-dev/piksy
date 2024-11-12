@@ -18,6 +18,7 @@
 #include <string>
 
 #include "SDL_render.h"
+#include "command/load_command.hpp"
 #include "command/save_command.hpp"
 #include "components/animation_preview.hpp"
 
@@ -117,9 +118,20 @@ void Application::init_fonts() {
 }
 
 void Application::init_state() {
-    // NOTE: DON'T COMMIT
-    m_state.texture_sprite.set_texture(
-        m_resource_manager.get_texture(std::string(RESOURCE_DIR) + "/textures/black_goku.png"));
+    {
+        // NOTE: DON'T COMMIT
+        // UPDATE: ...
+        commands::LoadCommand command(m_state, m_resource_manager, m_config.app_config.save_file);
+        command.execute();
+    }
+
+    if (m_state.animation_state.animations.empty()) {
+        m_state.animation_state.current_animation = "Untitled";
+        m_state.animation_state.animations["Untitled"];
+    } else if (m_state.animation_state.current_animation.empty()) {
+        m_state.animation_state.current_animation =
+            m_state.animation_state.animations.begin()->first;
+    }
 }
 
 void Application::init_components() {
@@ -158,6 +170,10 @@ void Application::handle_events() {
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT) {
+            // TODO: Configure this `Save on Exit`
+            commands::SaveCommand command(m_state, m_config.app_config.save_file);
+            command.execute();
+
             m_is_running = false;
         } else if (event.type == SDL_DROPFILE) {
             const char *dropped_filedir = event.drop.file;
@@ -170,6 +186,10 @@ void Application::handle_events() {
 
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
             event.window.windowID == SDL_GetWindowID(m_window.get())) {
+            // TODO: Configure this `Save on Exit`
+            commands::SaveCommand command(m_state, m_config.app_config.save_file);
+            command.execute();
+
             m_is_running = false;
         }
 
@@ -244,7 +264,9 @@ void Application::render() {
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
                     if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-                        // TODO: Handle opening a project
+                        commands::LoadCommand command(m_state, m_resource_manager,
+                                                      m_config.app_config.save_file);
+                        command.execute();
                     }
                     if (ImGui::MenuItem("Save", "Cmd+S")) {
                         commands::SaveCommand command(m_state, m_config.app_config.save_file);

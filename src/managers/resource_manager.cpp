@@ -39,7 +39,7 @@ std::shared_ptr<rendering::Texture2D> ResourceManager::get_texture(
 
     core::Logger::debug("Loading texture: %s", texture_path.c_str());
     m_textures.emplace(texture_path,
-                      std::make_shared<rendering::Texture2D>(m_renderer.get(), texture_path));
+                       std::make_shared<rendering::Texture2D>(m_renderer.get(), texture_path));
     return m_textures.at(texture_path);
 }
 

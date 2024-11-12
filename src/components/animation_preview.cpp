@@ -5,6 +5,8 @@
 #include <components/animation_preview.hpp>
 #include <core/logger.hpp>
 
+#include "rendering/animation.hpp"
+
 namespace piksy {
 namespace components {
 
@@ -15,23 +17,92 @@ void AnimationPreview::update() {}
 void AnimationPreview::render() {
     ImGui::Begin("Animation");
 
+    if (m_state.texture_sprite.texture() == nullptr) {
+        ImGui::Text("Please select a texture and select some frames to preview the animation.");
+        ImGui::End();
+        return;
+    }
+
+    auto& animation = m_state.animation_state.get_current_animation();
+    const char* animation_label = m_state.animation_state.current_animation.c_str();
+
+    render_animation_combo(animation_label);
+
+    // Animation Name Editing and Deletion
+    ImGui::Separator();
+    ImGui::Text("Animation Options:");
+    static char new_name[256] = "";
+    if (ImGui::InputText("Rename Animation", new_name, IM_ARRAYSIZE(new_name),
+                         ImGuiInputTextFlags_EnterReturnsTrue)) {
+        if (new_name[0] != '\0') {  // Ensure non-empty name
+            auto& animations = m_state.animation_state.animations;
+            auto iter = animations.find(animation_label);
+            if (iter != animations.end()) {
+                animations[new_name] = std::move(iter->second);
+                animations.erase(iter);
+                m_state.animation_state.current_animation = new_name;
+                strcpy(new_name, "");  // Clear the input field
+            }
+        }
+    }
+
+    if (ImGui::Button("Delete Animation")) {
+        auto& animations = m_state.animation_state.animations;
+        animations.erase(m_state.animation_state.current_animation);
+        if (!animations.empty()) {
+            m_state.animation_state.current_animation = animations.begin()->first;
+        } else {
+            m_state.animation_state.current_animation.clear();
+        }
+    }
+
+    ImGui::Separator();
+    render_frame_slider(animation);
+
+    ImGui::End();
+}
+
+void AnimationPreview::render_animation_combo(const char* animation_label) {
+    if (ImGui::BeginCombo("Select an animation", animation_label,
+                          ImGuiComboFlags_PopupAlignLeft | ImGuiComboFlags_HeightSmall)) {
+        for (const auto& [name, anim] : m_state.animation_state.animations) {
+            bool is_selected = (name == m_state.animation_state.current_animation);
+
+            if (ImGui::Selectable((std::string(ICON_FA_VIDEO_CAMERA) + " " + name).c_str(),
+                                  is_selected)) {
+                m_state.animation_state.current_animation = name;
+                m_state.animation_state.selected_frames.clear();
+            }
+
+            if (is_selected) ImGui::SetItemDefaultFocus();
+        }
+        if (ImGui::Selectable(ICON_FA_PLUS " New Animation", false)) {
+            std::string new_animation =
+                "New Animation " + std::to_string(m_state.animation_state.animations.size());
+            m_state.animation_state.animations[new_animation];
+            m_state.animation_state.current_animation = new_animation;
+            m_state.animation_state.selected_frames.clear();
+        }
+        ImGui::EndCombo();
+    }
+}
+
+void AnimationPreview::render_frame_slider(const rendering::Animation& animation) {
     ImGui::BeginChild("##AnimationSlider");
 
-    // Adjust target frame offset based on horizontal scroll input
+    // Horizontal scroll for smooth navigation
     float wheel_H = ImGui::GetIO().MouseWheelH;
     if (wheel_H != 0.0f) {
-        target_frame_offset += wheel_H;  // Adjust the speed of scroll here if needed
+        target_frame_offset += wheel_H;
     }
 
     // Smoothly lerp the current frame offset towards the target
     const float lerp_speed = 0.05f;
     current_frame_offset += (target_frame_offset - current_frame_offset) * lerp_speed;
 
-    // Wrap `current_frame_offset` to an integer frame index
     int frame_offset_index = static_cast<int>(std::round(current_frame_offset));
-    int num_items = 7;  // Display up to 7 items, including placeholders if needed
+    int num_items = 7;
 
-    // Calculate centered layout position
     ImVec2 item_size{125.f, 125.f};
     float gap = 40.0f;
     float total_width = (item_size.x * num_items) + (gap * (num_items - 1));
@@ -43,14 +114,13 @@ void AnimationPreview::render() {
     window_pos.y += ImGui::GetContentRegionAvail().y / 2 - item_size.y / 2;
     ImGui::SetCursorScreenPos(window_pos);
 
-    // Calculate center frame index and offset other frames around it
     int center_index = m_state.animation_state.current_frame + frame_offset_index;
     int half_num_items = num_items / 2;
 
     for (int i = 0; i < num_items; ++i) {
         int frame_index =
-            (center_index + i - half_num_items + m_state.frames.size()) % m_state.frames.size();
-        bool is_placeholder = frame_index >= m_state.frames.size();
+            (center_index + i - half_num_items + animation.frames.size()) % animation.frames.size();
+        bool is_placeholder = frame_index >= animation.frames.size();
 
         ImVec2 pos = {window_pos.x + start_x + i * (item_size.x + gap), window_pos.y};
         ImGui::SetCursorScreenPos(pos);
@@ -85,7 +155,7 @@ void AnimationPreview::render() {
             draw_list->AddLine({scaled_pos.x, scaled_pos.y + scaled_item_size.y},
                                {scaled_pos.x + scaled_item_size.x, scaled_pos.y}, line_color, 2.0f);
         } else {
-            const rendering::Frame& frame = m_state.frames[frame_index];
+            const rendering::Frame& frame = animation.frames[frame_index];
             ImVec2 uv0{static_cast<float>(frame.x) / texture->width(),
                        static_cast<float>(frame.y) / texture->height()};
             ImVec2 uv1{static_cast<float>(frame.x + frame.w) / texture->width(),
@@ -130,11 +200,11 @@ void AnimationPreview::render() {
     }
 
     ImGui::EndChild();
-    ImGui::End();
 }
 
 void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
-    const rendering::Frame& frame = m_state.frames[frame_index];
+    auto& animation = m_state.animation_state.get_current_animation();
+    const rendering::Frame& frame = animation.frames[frame_index];
     float desired_scale = 4.0f;
     m_state.zoom_state.target_scale = desired_scale;
 
@@ -151,11 +221,13 @@ void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
 }
 
 void AnimationPreview::delete_frame(size_t frame_index) {
-    if (m_state.selected_frames.count(frame_index)) {
-        m_state.selected_frames.erase(frame_index);
+    if (m_state.animation_state.selected_frames.count(frame_index)) {
+        m_state.animation_state.selected_frames.erase(frame_index);
     }
-    if (frame_index < m_state.frames.size()) {
-        m_state.frames.erase(m_state.frames.begin() + frame_index);
+
+    auto& animation = m_state.animation_state.get_current_animation();
+    if (frame_index < animation.frames.size()) {
+        animation.frames.erase(animation.frames.begin() + frame_index);
     }
 }
 

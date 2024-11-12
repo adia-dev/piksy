@@ -11,7 +11,7 @@ namespace piksy {
 namespace commands {
 class SaveCommand : public Command {
    public:
-    SaveCommand(core::State& m_state, fs::path m_save_path);
+    SaveCommand(core::State& state, fs::path save_path);
 
     virtual void execute() override;
 

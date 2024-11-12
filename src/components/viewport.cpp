@@ -77,26 +77,29 @@ void Viewport::update() {
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_Backspace)) {
-        if (!m_state.selected_frames.empty()) {
-            for (size_t i : m_state.selected_frames) {
-                if (i < m_state.frames.size()) {
-                    m_state.frames.erase(m_state.frames.begin() + i);
+        if (!m_state.animation_state.selected_frames.empty()) {
+            auto& animation = m_state.animation_state.get_current_animation();
+            for (size_t i : m_state.animation_state.selected_frames) {
+                if (i < animation.frames.size()) {
+                    animation.frames.erase(animation.frames.begin() + i);
                 }
             }
-            m_state.selected_frames.clear();
+            m_state.animation_state.selected_frames.clear();
         }
     }
 
     if (ImGui::IsKeyDown(ImGuiKey_Escape)) {
         switch (m_state.current_tool) {
             case core::Tool::SELECT:
-                m_state.selected_frames.clear();
+                m_state.animation_state.selected_frames.clear();
                 break;
-            case core::Tool::EXTRACT:
+            case core::Tool::EXTRACT: {
+                auto& animation = m_state.animation_state.get_current_animation();
+                animation.frames.clear();
+
                 m_state.animation_state.current_frame = 0;
-                m_state.frames.clear();
-                m_state.selected_frames.clear();
-                break;
+                m_state.animation_state.selected_frames.clear();
+            } break;
             default:
                 break;
         }
@@ -152,6 +155,12 @@ void Viewport::notify_dropped_file(const std::string& dropped_file_path) {
     core::Logger::debug("Dropped file into the Viewport: %s", dropped_file_path.c_str());
     try {
         m_state.texture_sprite.set_texture(m_resource_manager.get_texture(dropped_file_path));
+
+        // TODO: Refactor this, this isn't right
+        m_state.animation_state.selected_frames.clear();
+        m_state.animation_state.animations.clear();
+        m_state.animation_state.current_animation = "Untitled";
+        m_state.animation_state.animations["Untitled"];
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());
     }
@@ -250,19 +259,22 @@ void Viewport::process_selection() {
         case core::Tool::EXTRACT: {
             if (!m_state.texture_sprite.texture()) return;
 
+            auto& animation = m_state.animation_state.get_current_animation();
+
             commands::FrameExtractionCommand command(
-                selection_world_rect, m_state.texture_sprite.texture(), m_state.frames,
+                selection_world_rect, m_state.texture_sprite.texture(), animation.frames,
                 ImGui::IsKeyPressed(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_LeftShift));
             command.execute();
         } break;
         case core::Tool::SELECT: {
-            m_state.selected_frames.clear();
+            m_state.animation_state.selected_frames.clear();
 
-            for (size_t i = 0; i < m_state.frames.size(); ++i) {
-                const rendering::Frame& frame = m_state.frames[i];
+            auto& animation = m_state.animation_state.get_current_animation();
+            for (size_t i = 0; i < animation.frames.size(); ++i) {
+                const rendering::Frame& frame = animation.frames[i];
                 const SDL_Rect frame_rect{frame.x, frame.y, frame.w, frame.h};
                 if (SDL_HasIntersection(&frame_rect, &selection_world_rect)) {
-                    m_state.selected_frames.insert(i);
+                    m_state.animation_state.selected_frames.insert(i);
                 }
             }
         } break;
@@ -389,8 +401,9 @@ void Viewport::render_frames() const {
     const ImVec2 offset = m_state.pan_state.current_offset;
 
     // Render loop with reduced computation
-    for (size_t i = 0; i < m_state.frames.size(); ++i) {
-        const rendering::Frame& frame = m_state.frames[i];
+    auto& animation = m_state.animation_state.get_current_animation();
+    for (size_t i = 0; i < animation.frames.size(); ++i) {
+        const rendering::Frame& frame = animation.frames[i];
         SDL_Rect render_frame_rect{static_cast<int>((frame.x + offset.x) * scale),
                                    static_cast<int>((frame.y + offset.y) * scale),
                                    static_cast<int>(frame.w * scale),
@@ -400,7 +413,7 @@ void Viewport::render_frames() const {
         if (i == m_state.animation_state.current_frame) {
             SDL_SetRenderDrawColor(m_renderer.get(), current_frame_color.r, current_frame_color.g,
                                    current_frame_color.b, current_frame_color.a);
-        } else if (m_state.selected_frames.count(i)) {
+        } else if (m_state.animation_state.selected_frames.count(i)) {
             SDL_SetRenderDrawColor(m_renderer.get(), selected_frame_color.r, selected_frame_color.g,
                                    selected_frame_color.b, selected_frame_color.a);
         } else {

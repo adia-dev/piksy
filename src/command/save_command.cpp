@@ -10,12 +10,12 @@
 namespace piksy {
 namespace commands {
 
-SaveCommand::SaveCommand(core::State& m_state, fs::path m_save_path)
-    : m_state(m_state), m_save_path(std::move(m_save_path)) {}
+SaveCommand::SaveCommand(core::State& state, fs::path save_path)
+    : m_state(state), m_save_path(std::move(save_path)) {}
 
 void SaveCommand::execute() {
     try {
-        core::Logger::info("Saving the application staet...");
+        core::Logger::info("Saving the application state...");
 
         if (!fs::exists(m_save_path)) {
             core::Logger::warn("Save file does not exists yet, creating it... (path: %s)",
@@ -57,15 +57,23 @@ void SaveCommand::save(std::ostream& save_file_stream) {
     j["metadata"] = {{"version", 1}, {"timestamp", timestamp_buf}};
     j["tool"] = m_state.current_tool;
 
-    j["frames"] = nlohmann::json::array();
-    for (const auto& frame : m_state.frames) {
-        j["frames"].push_back({
-            {"x", frame.x},
-            {"y", frame.y},
-            {"w", frame.w},
-            {"h", frame.h},
+    j["animations"] = nlohmann::json::array();
+    for (const auto& [name, animation] : m_state.animation_state.animations) {
+        nlohmann::json animation_frames = nlohmann::json::array();
+        for (const auto& frame : animation.frames) {
+            animation_frames.push_back({
+                {"x", frame.x},
+                {"y", frame.y},
+                {"w", frame.w},
+                {"h", frame.h},
+            });
+        }
+        j["animations"].push_back({
+            {"name", name},
+            {"frames", animation_frames},
         });
     }
+    j["current_animation"] = m_state.animation_state.current_animation;
 
     nlohmann::json texture_json({});
     if (m_state.texture_sprite.texture() != nullptr) {
