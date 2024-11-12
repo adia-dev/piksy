@@ -19,6 +19,7 @@
 
 #include "SDL_render.h"
 #include "command/save_command.hpp"
+#include "components/animation_preview.hpp"
 
 namespace piksy {
 namespace core {
@@ -130,6 +131,8 @@ void Application::init_components() {
     m_ui_components.emplace("Project",
                             std::make_unique<components::Project>(m_state, m_resource_manager));
     m_ui_components.emplace("Frame Viewer", std::make_unique<components::FrameViewer>(m_state));
+    m_ui_components.emplace("Animation Preview",
+                            std::make_unique<components::AnimationPreview>(m_state));
 }
 
 void Application::cleanup() {

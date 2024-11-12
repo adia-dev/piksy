@@ -169,7 +169,7 @@ void FrameViewer::render() {
             ImGui::SetCursorPos({ImGui::GetCursorPos().x + center_offset.x,
                                  ImGui::GetCursorPos().y + center_offset.y});
 
-            draw_background_grid(ImGui::GetItemRectMin(), available_space);
+            render_background_grid(available_space);
             ImGui::Image((ImTextureID)(intptr_t)texture->get(), display_size, uv0, uv1);
 
             ImGui::End();
@@ -177,9 +177,10 @@ void FrameViewer::render() {
     }
 }
 
-void FrameViewer::draw_background_grid(const ImVec2& pos, const ImVec2& size) const {
+void FrameViewer::render_background_grid(const ImVec2& size) const {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     const int grid_size = 10;
+    const ImVec2& pos = ImGui::GetItemRectMin();
 
     for (float x = pos.x - size.y; x < pos.x + size.x; x += grid_size) {
         draw_list->AddLine(ImVec2(x, pos.y), ImVec2(x + size.y, pos.y + size.y),
