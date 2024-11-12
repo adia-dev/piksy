@@ -105,6 +105,7 @@ struct MouseState {
     ImVec2 current_pos;
     bool is_pressed = false;
     bool is_panning = false;
+    bool is_dragging = false;
 };
 
 struct ZoomState {

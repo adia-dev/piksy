@@ -62,7 +62,7 @@ void Viewport::create_render_texture(int width, int height) {
     }
 
     m_render_texture = SDL_CreateTexture(m_renderer.get(), SDL_PIXELFORMAT_RGBA8888,
-                                        SDL_TEXTUREACCESS_TARGET, width, height);
+                                         SDL_TEXTUREACCESS_TARGET, width, height);
 
     if (!m_render_texture) {
         core::Logger::fatal("Failed to create render texture: %s", SDL_GetError());
@@ -171,12 +171,14 @@ void Viewport::process_mouse_input() {
             handle_click(m_state.mouse_state.current_pos.x, m_state.mouse_state.current_pos.y);
         }
 
+        m_state.mouse_state.is_dragging = m_state.mouse_state.is_pressed;
         m_state.mouse_state.is_pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
         process_zoom();
         process_panning();
 
     } else {
+        m_state.mouse_state.is_dragging = false;
         m_state.mouse_state.is_pressed = false;
         m_state.mouse_state.is_panning = false;
     }
@@ -204,7 +206,8 @@ void Viewport::process_zoom() {
 
 void Viewport::process_panning() {
     if (m_state.mouse_state.is_pressed &&
-        (m_state.current_tool == core::Tool::PAN || ImGui::IsKeyDown(ImGuiKey_LeftShift))) {
+        (m_state.current_tool == core::Tool::PAN ||
+         (!m_state.mouse_state.is_dragging && ImGui::IsKeyDown(ImGuiKey_LeftShift)))) {
         ImVec2 delta = {(m_state.mouse_state.current_pos.x - m_state.mouse_state.start_pos.x) /
                             m_state.zoom_state.current_scale,
                         (m_state.mouse_state.current_pos.y - m_state.mouse_state.start_pos.y) /
@@ -249,7 +252,8 @@ void Viewport::process_selection() {
             if (!m_state.texture_sprite.texture()) return;
 
             commands::FrameExtractionCommand command(
-                selection_world_rect, m_state.texture_sprite.texture(), m_state.frames);
+                selection_world_rect, m_state.texture_sprite.texture(), m_state.frames,
+                ImGui::IsKeyPressed(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_LeftShift));
             command.execute();
         } break;
         case core::Tool::SELECT: {
@@ -271,8 +275,8 @@ void Viewport::process_selection() {
 void Viewport::render_texture() {
     if (m_state.texture_sprite.texture() != nullptr) {
         m_state.texture_sprite.render(m_renderer.get(), m_state.zoom_state.current_scale,
-                                     m_state.pan_state.current_offset.x,
-                                     m_state.pan_state.current_offset.y);
+                                      m_state.pan_state.current_offset.x,
+                                      m_state.pan_state.current_offset.y);
     } else {
         render_placeholder_text();
     }
@@ -311,7 +315,8 @@ void Viewport::render_placeholder_text() {
         SDL_Surface* text_surface =
             TTF_RenderText_Blended(font.get()->get(), placeholder_text, text_color);
         if (text_surface != nullptr) {
-            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(m_renderer.get(), text_surface);
+            SDL_Texture* text_texture =
+                SDL_CreateTextureFromSurface(m_renderer.get(), text_surface);
             if (text_texture != nullptr) {
                 int text_width = text_surface->w;
                 int text_height = text_surface->h;
@@ -333,7 +338,7 @@ void Viewport::render_selection_rect() {
     int current_y = static_cast<int>(m_state.mouse_state.current_pos.y);
 
     m_selection_rect = {std::min(start_x, current_x), std::min(start_y, current_y),
-                       std::abs(current_x - start_x), std::abs(current_y - start_y)};
+                        std::abs(current_x - start_x), std::abs(current_y - start_y)};
 
     SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 0, 255);
     SDL_RenderDrawRect(m_renderer.get(), &m_selection_rect);
