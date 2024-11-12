@@ -4,8 +4,8 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_internal.h>
 
-#include <components/animation_preview.hpp>
 #include <components/console.hpp>
+#include <components/frame_viewer.hpp>
 #include <components/inspector.hpp>
 #include <components/project.hpp>
 #include <components/viewport.hpp>
@@ -122,15 +122,14 @@ void Application::init_state() {
 }
 
 void Application::init_components() {
-    m_ui_components.emplace(
-        "Viewport", std::make_unique<components::Viewport>(m_state, m_renderer, m_resource_manager));
+    m_ui_components.emplace("Viewport", std::make_unique<components::Viewport>(m_state, m_renderer,
+                                                                               m_resource_manager));
     m_ui_components.emplace("Console", std::make_unique<components::Console>(m_state));
     /* _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_state,
      * _renderer)); */
     m_ui_components.emplace("Project",
-                           std::make_unique<components::Project>(m_state, m_resource_manager));
-    m_ui_components.emplace("Animation Preview",
-                           std::make_unique<components::AnimationPreview>(m_state));
+                            std::make_unique<components::Project>(m_state, m_resource_manager));
+    m_ui_components.emplace("Frame Viewer", std::make_unique<components::FrameViewer>(m_state));
 }
 
 void Application::cleanup() {

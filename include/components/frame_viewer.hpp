@@ -6,9 +6,9 @@
 namespace piksy {
 namespace components {
 
-class AnimationPreview : public UIComponent {
+class FrameViewer : public UIComponent {
    public:
-    explicit AnimationPreview(core::State& state);
+    explicit FrameViewer(core::State& state);
     void update() override;
     void render() override;
 

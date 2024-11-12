@@ -1,6 +1,6 @@
 #include <imgui.h>
 
-#include <components/animation_preview.hpp>
+#include <components/frame_viewer.hpp>
 #include <core/logger.hpp>
 #include <cstdint>
 #include <cstdio>
@@ -10,9 +10,9 @@
 namespace piksy {
 namespace components {
 
-AnimationPreview::AnimationPreview(core::State& state) : UIComponent(state) {}
+FrameViewer::FrameViewer(core::State& state) : UIComponent(state) {}
 
-void AnimationPreview::update() {
+void FrameViewer::update() {
     if (!m_state.animation_state.is_playing || m_state.frames.empty()) return;
 
     m_state.animation_state.timer += m_state.delta_time;
@@ -24,7 +24,7 @@ void AnimationPreview::update() {
     }
 }
 
-void AnimationPreview::render() {
+void FrameViewer::render() {
     auto texture = m_state.texture_sprite.texture();
     if (!texture) {
         ImGui::Text("Please select a texture and select some frames to visualize the preview.");
@@ -177,7 +177,7 @@ void AnimationPreview::render() {
     }
 }
 
-void AnimationPreview::draw_background_grid(const ImVec2& pos, const ImVec2& size) const {
+void FrameViewer::draw_background_grid(const ImVec2& pos, const ImVec2& size) const {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     const int grid_size = 10;
 
@@ -187,7 +187,7 @@ void AnimationPreview::draw_background_grid(const ImVec2& pos, const ImVec2& siz
     }
 }
 
-void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
+void FrameViewer::adjust_pan_and_zoom_to_frame(int frame_index) {
     const rendering::Frame& frame = m_state.frames[frame_index];
     float desired_scale = 4.0f;
     m_state.zoom_state.target_scale = desired_scale;
@@ -204,7 +204,7 @@ void AnimationPreview::adjust_pan_and_zoom_to_frame(int frame_index) {
     m_state.pan_state.target_offset.y = pan_offset_y;
 }
 
-void AnimationPreview::delete_frame(size_t frame_index) {
+void FrameViewer::delete_frame(size_t frame_index) {
     if (m_state.selected_frames.count(frame_index)) {
         m_state.selected_frames.erase(frame_index);
     }
