@@ -24,12 +24,13 @@ enum class Tool {
     MEASURE,       // Measure tool for checking distances or dimensions
     SNAP,          // Snap tool for aligning objects precisely
     PAN,           // Pan tool for moving the viewport
-    ZOOM,          // Zoom tool for changing viewport magnification
     COLOR_SWAP,    // Color swapping tool, swap a color of a texture for another
     BRUSH,         // Brush tool for painting or drawing
     EXTRACT,       // Custom extraction tool
     VIEW,          // View tool for changing camera angles or perspective
     LASSO_SELECT,  // Lasso selection tool for freeform selections
+    ZOOM_IN,       // Zoom in tool for changing viewport magnification
+    ZOOM_OUT,      // Zoom out tool for changing viewport magnification
     COUNT          // Count of all the tools available
 };
 
@@ -50,8 +51,6 @@ inline const char* tool_to_string(Tool tool) {
             return ICON_FA_MAGNET;
         case Tool::PAN:
             return ICON_FA_PAPER_PLANE_O;
-        case Tool::ZOOM:
-            return ICON_FA_SEARCH;
         case Tool::COLOR_SWAP:
             return ICON_FA_TINT;
         case Tool::BRUSH:
@@ -62,6 +61,10 @@ inline const char* tool_to_string(Tool tool) {
             return ICON_FA_EYE;
         case Tool::LASSO_SELECT:
             return ICON_FA_PENCIL_SQUARE_O;
+        case Tool::ZOOM_IN:
+            return ICON_FA_SEARCH_PLUS;
+        case Tool::ZOOM_OUT:
+            return ICON_FA_SEARCH_MINUS;
         case Tool::COUNT:
         default:
             return "Unknown";
@@ -84,8 +87,6 @@ inline const char* tool_to_icon(Tool tool) {
             return "SNAP";
         case Tool::PAN:
             return "PAN";
-        case Tool::ZOOM:
-            return "ZOOM";
         case Tool::COLOR_SWAP:
             return "COLOR SWAP";
         case Tool::BRUSH:
@@ -96,6 +97,10 @@ inline const char* tool_to_icon(Tool tool) {
             return "VIEW";
         case Tool::LASSO_SELECT:
             return "LASSO_SELECT";
+        case Tool::ZOOM_IN:
+            return "ZOOM_IN";
+        case Tool::ZOOM_OUT:
+            return "ZOOM_OUT";
         case Tool::COUNT:
             return "COUNT";
         default:
@@ -139,9 +144,7 @@ struct AnimationState {
         return animations[animation_name];
     }
 
-    rendering::Animation& get_current_animation() {
-        return animations[current_animation];
-    }
+    rendering::Animation& get_current_animation() { return animations[current_animation]; }
 };
 
 struct ViewportState {

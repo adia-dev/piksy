@@ -196,7 +196,7 @@ void Viewport::process_zoom() {
     float wheel = ImGui::GetIO().MouseWheel;
 
     float zoom_accel = wheel;
-    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt) || m_state.current_tool == core::Tool::ZOOM) {
+    if (ImGui::IsKeyDown(ImGuiKey_LeftAlt)) {
         float drag_y = m_state.mouse_state.is_pressed *
                        (m_state.mouse_state.current_pos.y - m_state.mouse_state.start_pos.y);
 

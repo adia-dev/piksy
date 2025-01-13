@@ -68,10 +68,22 @@ void LoadCommand::load(std::istream& load_file_stream) {
                 rendering::Animation animation;
 
                 for (const auto& frame_json : anim_json["frames"]) {
-                    rendering::Frame frame{frame_json["x"].get<int>(), frame_json["y"].get<int>(),
-                                           frame_json["w"].get<int>(), frame_json["h"].get<int>()};
+                    rendering::Frame frame{
+                        frame_json["x"].get<int>(),
+                        frame_json["y"].get<int>(),
+                        frame_json["w"].get<int>(),
+                        frame_json["h"].get<int>(),
+                    };
+
+                    frame.data = frame_json;
+                    frame.data.erase("x");
+                    frame.data.erase("y");
+                    frame.data.erase("w");
+                    frame.data.erase("h");
+
                     animation.frames.push_back(frame);
                 }
+
                 m_state.animation_state.animations[name] = std::move(animation);
             }
         }

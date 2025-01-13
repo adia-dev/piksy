@@ -59,19 +59,22 @@ void SaveCommand::save(std::ostream& save_file_stream) {
 
     j["animations"] = nlohmann::json::array();
     for (const auto& [name, animation] : m_state.animation_state.animations) {
-        nlohmann::json animation_frames = nlohmann::json::array();
+        nlohmann::json animation_json;
+        animation_json["name"] = name;
+
+        animation_json["frames"] = nlohmann::json::array();
         for (const auto& frame : animation.frames) {
-            animation_frames.push_back({
-                {"x", frame.x},
-                {"y", frame.y},
-                {"w", frame.w},
-                {"h", frame.h},
-            });
+            nlohmann::json frame_json = {
+                {"x", frame.x}, {"y", frame.y}, {"w", frame.w}, {"h", frame.h}};
+
+            if (!frame.data.empty()) {
+                frame_json.merge_patch(frame.data);
+            }
+
+            animation_json["frames"].push_back(frame_json);
         }
-        j["animations"].push_back({
-            {"name", name},
-            {"frames", animation_frames},
-        });
+
+        j["animations"].push_back(animation_json);
     }
     j["current_animation"] = m_state.animation_state.current_animation;
 

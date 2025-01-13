@@ -15,6 +15,8 @@ class FrameViewer : public UIComponent {
    private:
     void adjust_pan_and_zoom_to_frame(int frame_index);
     void render_background_grid(const ImVec2& size) const;
+    void render_custom_data_editor(nlohmann::json& data_json) const;
+    void render_frame_data() const;
     void delete_frame(size_t frame_index);
 };
 
