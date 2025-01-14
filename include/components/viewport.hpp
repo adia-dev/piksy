@@ -45,8 +45,6 @@ class Viewport : public UIComponent {
     void render_frames() const;
 
     // TODO: Move these to commands
-    void handle_background_color_swapping(rendering::Sprite& sprite, float& texture_x,
-                                          float& texture_y);
     SDL_Color get_texture_pixel_color(int x, int y, const rendering::Sprite& sprite);
 
     void handle_click(float x, float y);
@@ -57,6 +55,8 @@ class Viewport : public UIComponent {
     rendering::Renderer& m_renderer;
     managers::ResourceManager& m_resource_manager;
     SDL_Texture* m_render_texture = nullptr;
+    std::vector<rendering::Frame> m_preview_frames;
+    bool m_is_previewing = false;
 
     ImVec2 m_viewport_size;
     SDL_Rect m_selection_rect;

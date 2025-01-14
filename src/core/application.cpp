@@ -18,6 +18,8 @@
 #include <string>
 
 #include "SDL_render.h"
+#include "command/export_animation_command.hpp"
+#include "command/export_texture_command.hpp"
 #include "command/load_command.hpp"
 #include "command/save_command.hpp"
 #include "components/animation_preview.hpp"
@@ -272,6 +274,24 @@ void Application::render() {
                         commands::SaveCommand command(m_state, m_config.app_config.save_file);
                         command.execute();
                     }
+
+                    if (ImGui::MenuItem("Export Animations...", nullptr)) {
+                        // Hard-code or ask user for path
+                        // e.g. auto export_path = "./animations_export.json";
+                        // or open an "ImGuiFileDialog" or something
+                        std::string export_path = "./export_animations.json";
+
+                        commands::ExportAnimationsCommand export_cmd(m_state, export_path);
+                        export_cmd.execute();
+                    }
+
+                    if (ImGui::MenuItem("Export Texture as PNG...")) {
+                        fs::path export_path = "./exported_texture.png";
+
+                        commands::ExportTextureCommand export_cmd(m_state, export_path);
+                        export_cmd.execute();
+                    }
+
                     if (ImGui::MenuItem("Exit", "Alt+F4")) {
                         shutdown();
                     }

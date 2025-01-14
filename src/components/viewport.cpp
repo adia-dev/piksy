@@ -72,10 +72,36 @@ void Viewport::update() {
     update_zoom();
     update_pan();
 
+    // Handle frame extraction commit when mouse is released
+    if (m_state.current_tool == core::Tool::EXTRACT && !m_state.mouse_state.is_pressed &&
+        m_is_previewing) {
+        // Mouse was released and we were previewing - commit the frames
+        auto& animation = m_state.animation_state.get_current_animation();
+
+        // Check if we should append (shift key) or replace frames
+        bool should_append = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+
+        // Commit the preview frames
+        if (!m_preview_frames.empty()) {
+            if (!should_append) {
+                animation.frames.clear();
+            }
+            animation.frames.insert(animation.frames.end(), m_preview_frames.begin(),
+                                    m_preview_frames.end());
+
+            core::Logger::debug("Committed %zu frames to animation", m_preview_frames.size());
+        }
+
+        m_preview_frames.clear();
+        m_is_previewing = false;
+    }
+
+    // Handle selection and preview
     if (m_state.mouse_state.is_pressed && !m_state.mouse_state.is_panning) {
         process_selection();
     }
 
+    // Rest of the update code...
     if (ImGui::IsKeyDown(ImGuiKey_Backspace)) {
         if (!m_state.animation_state.selected_frames.empty()) {
             auto& animation = m_state.animation_state.get_current_animation();
@@ -96,7 +122,8 @@ void Viewport::update() {
             case core::Tool::EXTRACT: {
                 auto& animation = m_state.animation_state.get_current_animation();
                 animation.frames.clear();
-
+                m_preview_frames.clear();
+                m_is_previewing = false;
                 m_state.animation_state.current_frame = 0;
                 m_state.animation_state.selected_frames.clear();
             } break;
@@ -259,13 +286,16 @@ void Viewport::process_selection() {
         case core::Tool::EXTRACT: {
             if (!m_state.texture_sprite.texture()) return;
 
-            auto& animation = m_state.animation_state.get_current_animation();
-
-            commands::FrameExtractionCommand command(
-                selection_world_rect, m_state.texture_sprite.texture(), animation.frames,
-                ImGui::IsKeyPressed(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_LeftShift));
-            command.execute();
+            // Update preview while dragging
+            m_is_previewing = true;
+            commands::FrameExtractionCommand preview_command(
+                selection_world_rect, m_state.texture_sprite.texture(), m_preview_frames,
+                false,  // don't append in preview
+                true    // preview mode
+            );
+            preview_command.execute();
         } break;
+
         case core::Tool::SELECT: {
             m_state.animation_state.selected_frames.clear();
 
@@ -278,6 +308,7 @@ void Viewport::process_selection() {
                 }
             }
         } break;
+
         default:
             break;
     }
@@ -392,9 +423,10 @@ void Viewport::render_grid_background() {
 
 void Viewport::render_frames() const {
     // Pre-compute colors to reduce redundant operations inside the loop
-    const SDL_Color current_frame_color{206, 2, 65, 155};
-    const SDL_Color selected_frame_color{255, 135, 177, 155};
-    const SDL_Color default_frame_color{135, 235, 177, 155};
+    static const SDL_Color current_frame_color{206, 2, 65, 155};
+    static const SDL_Color selected_frame_color{255, 135, 177, 155};
+    static const SDL_Color default_frame_color{135, 235, 177, 155};
+    static const SDL_Color preview_frame_color{255, 215, 0, 155};
 
     // Pre-compute common scaling factor for efficiency
     const float scale = m_state.zoom_state.current_scale;
@@ -422,6 +454,19 @@ void Viewport::render_frames() const {
         }
 
         SDL_RenderDrawRect(m_renderer.get(), &render_frame_rect);
+    }
+
+    if (m_is_previewing) {
+        SDL_SetRenderDrawColor(m_renderer.get(), preview_frame_color.r, preview_frame_color.g,
+                               preview_frame_color.b, preview_frame_color.a);
+
+        for (const auto& frame : m_preview_frames) {
+            SDL_Rect render_frame_rect{static_cast<int>((frame.x + offset.x) * scale),
+                                       static_cast<int>((frame.y + offset.y) * scale),
+                                       static_cast<int>(frame.w * scale),
+                                       static_cast<int>(frame.h * scale)};
+            SDL_RenderDrawRect(m_renderer.get(), &render_frame_rect);
+        }
     }
 }
 
