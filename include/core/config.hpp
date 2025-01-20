@@ -57,6 +57,7 @@ struct WindowConfig {
     std::string title = "Piksy - App";
     SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     Uint32 renderer_flags = SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED;
+    Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER;
 };
 
 struct ImGuiConfig {
@@ -68,7 +69,7 @@ struct ImGuiConfig {
     std::string ini_filename = std::string(RESOURCE_DIR) + "/config/window.ini";
     std::string font_filename = std::string(RESOURCE_DIR) + "/fonts/PixelifySans-Regular.ttf";
 
-    void config_style() {
+    void config_style() const {
         ImGuiStyle& style = ImGui::GetStyle();
         ImVec4* colors = style.Colors;
 
@@ -212,8 +213,6 @@ struct Config {
     ImGuiConfig imgui_config;
     LoggerConfig logger_config;
     AppConfig app_config;
-
-    Uint32 init_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER;
 };
 
 }  // namespace core

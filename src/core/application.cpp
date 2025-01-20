@@ -58,57 +58,20 @@ void Application::init() {
     Logger::init(&m_config.logger_config);
     Logger::info("Initializing the application...");
 
-    init_sdl2();
-    init_imgui();
+    m_sdl_system.init(m_config.window_config);
+    m_window.init(m_config.window_config);
+    m_renderer.init(m_window, m_config.window_config);
+    m_gui_system.init(m_config.imgui_config, m_window, m_renderer);
+
+    m_io = &ImGui::GetIO();
+    (void)*m_io;
+
     init_textures();
     init_fonts();
     init_state();
     init_components();
 
     Logger::info("Successfully initialized the application !");
-}
-
-void Application::init_sdl2() {
-    if (SDL_Init(m_config.init_flags) != 0) {
-        core::Logger::fatal("Error initializing SDL: %s", SDL_GetError());
-    }
-
-    if (TTF_Init() < 0) {
-        core::Logger::fatal("Error initializing SDL_ttf: %s", TTF_GetError());
-    }
-
-#ifdef SDL_HINT_IME_SHOW_UI
-    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
-#endif
-
-    m_window.init(m_config.window_config);
-    m_renderer.init(m_window, m_config.window_config);
-}
-
-void Application::init_imgui() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    ImGui_ImplSDL2_InitForSDLRenderer(m_window.get(), m_renderer.get());
-    ImGui_ImplSDLRenderer2_Init(m_renderer.get());
-
-    m_io = &ImGui::GetIO();
-    (void)*m_io;
-    m_io->ConfigFlags |= m_config.imgui_config.flags;
-    m_io->FontGlobalScale = m_config.imgui_config.font_scale;
-    m_io->MouseDrawCursor = m_config.imgui_config.custom_mouse_cursor;
-
-    ImFontConfig icons_config;
-    icons_config.MergeMode = true;
-    icons_config.PixelSnapH = true;
-
-    m_io->IniFilename = m_config.imgui_config.ini_filename.c_str();
-    core::Logger::debug("Loading layout from config file at: %s", m_io->IniFilename);
-    /* _io->Fonts->Clear(); */
-    /* _io->Fonts->AddFontFromFileTTF(_config.imgui_config.font_filename.c_str(), 14.0f); */
-    /* _io->Fonts->Build(); */
-
-    m_config.imgui_config.config_style();
 }
 
 void Application::init_textures() {
@@ -152,16 +115,8 @@ void Application::init_components() {
 void Application::cleanup() {
     m_resource_manager.cleanup();
 
-    ImGui_ImplSDLRenderer2_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
-    TTF_Quit();
-
-    SDL_DestroyRenderer(m_renderer.get());
-    SDL_DestroyWindow(m_window.get());
-    SDL_Quit();
-
+    m_gui_system.cleanup();
+    m_sdl_system.cleanup(m_window, m_renderer);
     m_io = nullptr;
 
     core::Logger::debug("Application successfully cleaned up");
