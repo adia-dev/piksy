@@ -12,7 +12,7 @@ void Console::render() {
     ImGui::Begin("Console");
 
     if (ImGui::Button("Clear")) {
-        core::Logger::get().clear_messages();
+        core::Logger::clear_messages();
     }
     ImGui::SameLine();
     bool copy_to_clipboard = ImGui::Button("Copy");
@@ -54,7 +54,7 @@ void Console::render() {
         ImGui::LogToClipboard();
     }
 
-    const auto& messages = core::Logger::get().messages();
+    const auto& messages = core::Logger::messages();
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
     for (const auto& [level, message] : messages) {

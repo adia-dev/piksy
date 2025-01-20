@@ -55,7 +55,7 @@ rendering::Renderer &Application::mutable_renderer() { return m_renderer; }
 const rendering::Renderer &Application::renderer() const { return m_renderer; }
 
 void Application::init() {
-    Logger::get().init(&m_config.logger_config);
+    Logger::init(&m_config.logger_config);
     Logger::info("Initializing the application...");
 
     init_sdl2();
@@ -320,16 +320,16 @@ void Application::render() {
             ImGui::End();
         }
 
-        ImVec4 color = Logger::get().messages().empty()
+        ImVec4 color = Logger::messages().empty()
                            ? ImVec4(0.0f, 0.0f, 0.0f, 255.0f)
-                           : LogLevelToColor(Logger::get().messages().back().first);
+                           : LogLevelToColor(Logger::messages().back().first);
         ImGui::PushStyleColor(ImGuiCol_MenuBarBg, color);
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 255));
         if (ImGui::BeginViewportSideBar("##MainStatusBar", viewport, ImGuiDir_Down, height,
                                         window_flags)) {
             if (ImGui::BeginMenuBar()) {
-                if (!Logger::get().messages().empty()) {
-                    auto &[level, message] = Logger::get().messages().back();
+                if (!Logger::messages().empty()) {
+                    auto &[level, message] = Logger::messages().back();
                     ImGui::Text("%s", message.c_str());
                 }
                 ImGui::EndMenuBar();

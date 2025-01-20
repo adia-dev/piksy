@@ -17,22 +17,20 @@ namespace piksy::core {
 
 class Logger {
    public:
-    static Logger& get() {
-        static Logger instance;
-        return instance;
-    }
-
-    void init(LoggerConfig* config) {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_config = config;
-        m_file_stream.open(m_config->log_file, std::ios::out | std::ios::app);
-        if (!m_file_stream.is_open()) {
-            throw std::runtime_error("Failed to open log file: " + m_config->log_file);
+    static void init(LoggerConfig* config) {
+        auto& logger = get();
+        std::lock_guard<std::mutex> lock(logger.m_mutex);
+        logger.m_config = config;
+        logger.m_file_stream.open(logger.m_config->log_file, std::ios::out | std::ios::app);
+        if (!logger.m_file_stream.is_open()) {
+            throw std::runtime_error("Failed to open log file: " + logger.m_config->log_file);
         }
     }
 
-    const std::deque<std::pair<LogLevel, std::string>>& messages() const { return m_messages; }
-    void clear_messages() { m_messages.clear(); }
+    static const std::deque<std::pair<LogLevel, std::string>>& messages() {
+        return get().m_messages;
+    }
+    static void clear_messages() { get().m_messages.clear(); }
 
     template <typename... Args>
     static void trace(const std::string& format_str, Args&&... args) {
@@ -78,6 +76,11 @@ class Logger {
     }
 
    private:
+    static Logger& get() {
+        static Logger instance;
+        return instance;
+    }
+
     template <typename... Args>
     void log(LogLevel level, const std::string& format_str, Args&&... args) {
         if (level < m_config->level) return;
