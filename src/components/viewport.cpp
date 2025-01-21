@@ -535,13 +535,12 @@ SDL_Color Viewport::get_texture_pixel_color(int x, int y, const rendering::Sprit
 
 void Viewport::render_toolbar() {
     // Make toolbar transparent
-    ImGui::PushStyleColor(ImGuiCol_ChildBg,
-                          ImVec4(0.1f, 0.1f, 0.1f, 0.5f));  // Adjust color and transparency
-    ImGui::SetNextWindowBgAlpha(0.5f);  // Set background transparency for the window
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+    ImGui::SetNextWindowBgAlpha(0.0f);
 
     // Create a dockable toolbar with offset
-    ImGui::SetNextWindowPos(ImVec2(15, 15), ImGuiCond_FirstUseEver);    // Offset from the border
-    ImGui::SetNextWindowSize(ImVec2(300, 50), ImGuiCond_FirstUseEver);  // Initial size
+    ImGui::SetNextWindowPos(ImVec2(15, 15), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(300, 50), ImGuiCond_FirstUseEver);
     ImGui::Begin("Toolbar", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
@@ -556,19 +555,18 @@ void Viewport::render_toolbar() {
     int num_tools = static_cast<int>(core::Tool::COUNT);
     for (int tool_idx = 0; tool_idx < num_tools; tool_idx++) {
         core::Tool tool = static_cast<core::Tool>(tool_idx);
-        const char* label = core::tool_to_string(tool);
         const char* icon = core::tool_to_icon(tool);
 
         if (tool_idx > 0) ImGui::SameLine();
 
         if (tool == m_state.current_tool) {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 125 / 255.0f, 155 / 255.0f, 0.73f));
-            if (ImGui::Button((std::string(icon) + " " + label).c_str())) {
+            if (ImGui::Button(icon)) {
                 m_state.current_tool = tool;
             }
             ImGui::PopStyleColor();
         } else {
-            if (ImGui::Button(label)) {
+            if (ImGui::Button(icon)) {
                 m_state.current_tool = tool;
             }
         }

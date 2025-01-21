@@ -274,7 +274,8 @@ void Application::render() {
         ImGui::PopStyleColor(2);
     }
 
-    /* ImGui::ShowDemoWindow(&_show_demo_window); */
+    // static bool show_demo_window = true;
+    // ImGui::ShowDemoWindow(&show_demo_window);
 
     ImGui::Render();
     SDL_RenderSetScale(m_renderer.get(), m_io->DisplayFramebufferScale.x,

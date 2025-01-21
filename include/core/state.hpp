@@ -35,7 +35,7 @@ enum class Tool {
 };
 
 // TODO: Move this the f*ck outta here
-inline const char* tool_to_string(Tool tool) {
+inline const char* tool_to_icon(Tool tool) {
     switch (tool) {
         case Tool::SELECT:
             return ICON_FA_HAND_POINTER_O;
@@ -71,7 +71,7 @@ inline const char* tool_to_string(Tool tool) {
     }
 }
 
-inline const char* tool_to_icon(Tool tool) {
+inline const char* tool_to_string(Tool tool) {
     switch (tool) {
         case Tool::SELECT:
             return "SELECT";
