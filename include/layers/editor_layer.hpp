@@ -2,8 +2,6 @@
 
 #include <SDL_events.h>
 
-#include <components/animation_preview.hpp>
-#include <components/frame_viewer.hpp>
 #include <components/project.hpp>
 #include <components/viewport.hpp>
 #include <layers/layer.hpp>
@@ -33,8 +31,6 @@ class EditorLayer : public Layer {
     std::unique_ptr<components::Viewport> m_viewport;
     std::unique_ptr<components::Console> m_console;
     std::unique_ptr<components::Project> m_project;
-    std::unique_ptr<components::FrameViewer> m_frame_viewer;
-    std::unique_ptr<components::AnimationPreview> m_animation_preview;
 };
 }  // namespace layers
 }  // namespace piksy
