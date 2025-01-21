@@ -1,17 +1,14 @@
 #pragma once
 
-#include <components/project.hpp>
-#include <components/ui_component.hpp>
-#include <components/viewport.hpp>
 #include <contexts/imgui_context.hpp>
 #include <contexts/sdl_context.hpp>
 #include <core/config.hpp>
 #include <core/state.hpp>
 #include <managers/resource_manager.hpp>
-#include <memory>
 #include <rendering/renderer.hpp>
 #include <rendering/window.hpp>
-#include <unordered_map>
+
+#include "layers/layer_stack.hpp"
 
 namespace piksy {
 namespace core {
@@ -40,7 +37,6 @@ class Application {
     void init_textures();
     void init_fonts();
     void init_state();
-    void init_components();
 
     void cleanup();
 
@@ -71,10 +67,10 @@ class Application {
     contexts::SDLContext m_sdl_system;
     contexts::ImGuiContext m_gui_system;
 
+    layers::LayerStack m_layer_stack;
+
     Config m_config;
     State m_state;
-
-    std::unordered_map<std::string, std::unique_ptr<components::UIComponent>> m_ui_components;
 };
 }  // namespace core
 }  // namespace piksy

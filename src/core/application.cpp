@@ -1,28 +1,22 @@
+#include <SDL_render.h>
 #include <SDL_ttf.h>
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_internal.h>
 
-#include <components/console.hpp>
-#include <components/frame_viewer.hpp>
-#include <components/inspector.hpp>
-#include <components/project.hpp>
-#include <components/viewport.hpp>
+#include <command/export_animation_command.hpp>
+#include <command/export_texture_command.hpp>
+#include <command/load_command.hpp>
+#include <command/save_command.hpp>
 #include <core/application.hpp>
 #include <core/config.hpp>
 #include <core/logger.hpp>
 #include <core/state.hpp>
+#include <layers/editor_layer.hpp>
 #include <managers/resource_manager.hpp>
 #include <memory>
 #include <string>
-
-#include "SDL_render.h"
-#include "command/export_animation_command.hpp"
-#include "command/export_texture_command.hpp"
-#include "command/load_command.hpp"
-#include "command/save_command.hpp"
-#include "components/animation_preview.hpp"
 
 namespace piksy {
 namespace core {
@@ -69,7 +63,8 @@ void Application::init() {
     init_textures();
     init_fonts();
     init_state();
-    init_components();
+
+    m_layer_stack.push_layer<layers::EditorLayer>(m_renderer, m_resource_manager, m_state);
 
     Logger::info("Successfully initialized the application !");
 }
@@ -99,19 +94,6 @@ void Application::init_state() {
     }
 }
 
-void Application::init_components() {
-    m_ui_components.emplace("Viewport", std::make_unique<components::Viewport>(m_state, m_renderer,
-                                                                               m_resource_manager));
-    m_ui_components.emplace("Console", std::make_unique<components::Console>(m_state));
-    /* _ui_components.emplace("Inspector", std::make_unique<components::Inspector>(_state,
-     * _renderer)); */
-    m_ui_components.emplace("Project",
-                            std::make_unique<components::Project>(m_state, m_resource_manager));
-    m_ui_components.emplace("Frame Viewer", std::make_unique<components::FrameViewer>(m_state));
-    m_ui_components.emplace("Animation Preview",
-                            std::make_unique<components::AnimationPreview>(m_state));
-}
-
 void Application::cleanup() {
     m_resource_manager.cleanup();
 
@@ -132,13 +114,6 @@ void Application::handle_events() {
             command.execute();
 
             m_is_running = false;
-        } else if (event.type == SDL_DROPFILE) {
-            const char *dropped_filedir = event.drop.file;
-
-            reinterpret_cast<components::Viewport *>(m_ui_components["Viewport"].get())
-                ->notify_dropped_file(dropped_filedir);
-
-            SDL_free((void *)dropped_filedir);
         }
 
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
@@ -150,8 +125,13 @@ void Application::handle_events() {
             m_is_running = false;
         }
 
-        if (m_io->WantCaptureMouse) {
-            continue;
+        bool event_handled = false;
+        for (auto &layer : m_layer_stack.layers()) {
+            layer->on_event(event, event_handled);
+
+            if (event_handled) {
+                break;
+            }
         }
     }
 }
@@ -167,8 +147,8 @@ void Application::update() {
     m_state.delta_time = delta_time;
     m_state.fps = 1.0f / delta_time;
 
-    for (auto &[name, component] : m_ui_components) {
-        component->update();
+    for (auto &layer : m_layer_stack.layers()) {
+        layer->on_update(delta_time);
     }
 }
 
@@ -206,8 +186,8 @@ void Application::render() {
         ImGui::End();
     }
 
-    for (auto &[name, component] : m_ui_components) {
-        component->render();
+    for (auto &layer : m_layer_stack.layers()) {
+        layer->on_render();
     }
 
     {
