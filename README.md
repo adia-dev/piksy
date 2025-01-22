@@ -1,11 +1,12 @@
-<p align="center">
-  <img src="docs/images/hero_banner.png" alt="Piksy Hero Image" width="400"/>
-</p>
-
 # Piksy
 
 > 🚧 **Work in Progress**<br>
 > Piksy is an evolving C++ application for effortless **sprite sheet editing**, **frame extraction**, and **animation handling**. It's currently **replacing** [this project](https://github.com/adia-dev/spritesheet_editor) but remains under heavy development!
+
+<p align="center">
+  <video width="400" autoplay loop muted playsinline src="https://github.com/user-attachments/assets/86629652-91dd-44be-9b04-788dc5fe345e" />
+</p>
+
 
 ## 🚀 Key Features
 
@@ -29,13 +30,12 @@
 
 ---
 
-## 🎉 Screenshots & Videos
+## 🎉 Screenshots & Videos (so far, subject to changes)
 
-_Add or embed your screenshots and short clips here to show off how Piksy looks and feels!_
+![image](https://github.com/user-attachments/assets/173d540e-8946-4ec3-8d6b-f81dce3f0954)
 
-<!--
-![Screenshot of Piksy in action](docs/images/piksy_screenshot.png)
--->
+<img width="1443" alt="image" src="https://github.com/user-attachments/assets/4df922f3-36c4-4b1c-9741-29dd2df35931" />
+
 
 ---
 
@@ -48,8 +48,8 @@ _Add or embed your screenshots and short clips here to show off how Piksy looks 
    ```
 2. **Build** (example using CMake):
    ```bash
-   mkdir build && cd build
-   cmake ..
+   make
+   # or
    make -j4
    ```
 3. **Run**
