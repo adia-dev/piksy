@@ -1,5 +1,6 @@
 #include <layers/editor_layer.hpp>
 
+#include "components/animation_player.hpp"
 #include "components/console.hpp"
 #include "core/logger.hpp"
 #include "managers/resource_manager.hpp"
@@ -15,6 +16,7 @@ EditorLayer::EditorLayer(rendering::Renderer& renderer, managers::ResourceManage
 void EditorLayer::on_attach() {
     m_viewport = std::make_unique<components::Viewport>(m_state, m_renderer, m_resource_manager);
     m_console = std::make_unique<components::Console>(m_state);
+    m_animation_player = std::make_unique<components::AnimationPlayer>(m_state);
     m_project = std::make_unique<components::Project>(m_state, m_resource_manager);
 
     core::Logger::debug("Attached the EditorLayer");
@@ -25,12 +27,14 @@ void EditorLayer::on_detach() { core::Logger::debug("Detached the EditorLayer");
 void EditorLayer::on_update(float dt) {
     m_viewport->update();
     m_console->update();
+    m_animation_player->update();
     m_project->update();
 }
 
 void EditorLayer::on_render() {
     m_viewport->render();
     m_console->render();
+    m_animation_player->render();
     m_project->render();
 }
 

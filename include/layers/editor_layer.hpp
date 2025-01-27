@@ -9,6 +9,7 @@
 #include <memory>
 #include <rendering/renderer.hpp>
 
+#include "components/animation_player.hpp"
 #include "components/console.hpp"
 
 namespace piksy {
@@ -30,6 +31,7 @@ class EditorLayer : public Layer {
 
     std::unique_ptr<components::Viewport> m_viewport;
     std::unique_ptr<components::Console> m_console;
+    std::unique_ptr<components::AnimationPlayer> m_animation_player;
     std::unique_ptr<components::Project> m_project;
 };
 }  // namespace layers
