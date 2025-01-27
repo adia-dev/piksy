@@ -30,21 +30,6 @@ Viewport::Viewport(core::State& state, rendering::Renderer& renderer,
       m_render_texture(nullptr),
       m_viewport_size(800, 600) {
     create_render_texture(static_cast<int>(m_viewport_size.x), static_cast<int>(m_viewport_size.y));
-
-    // NOTE: DON'T COMMIT
-    // UPADTE: You commited it dumbass...
-    if (m_state.texture_sprite.texture() != nullptr) {
-        commands::SwapTextureCommand command(
-            {255, 255, 255, 255},
-            SDL_Color{
-                static_cast<Uint8>(m_state.replacement_color[0] * 255),
-                static_cast<Uint8>(m_state.replacement_color[1] * 255),
-                static_cast<Uint8>(m_state.replacement_color[2] * 255),
-                static_cast<Uint8>(m_state.replacement_color[3] * 255),
-            },
-            m_state.texture_sprite.texture());
-        command.execute();
-    }
 }
 
 Viewport::~Viewport() {

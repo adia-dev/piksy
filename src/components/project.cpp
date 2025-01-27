@@ -43,13 +43,13 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries) {
             ImGui::SameLine();
 
             if (entry.is_open) {
-                ImGui::TextColored({0.49f, 1.0f, 0.83f, 1.0f}, "%s%s/", ICON_FA_FOLDER_OPEN,
+                ImGui::TextColored({0.49f, 1.0f, 0.83f, 1.0f}, "%s%s/", ICON_MD_FOLDER_OPEN,
                                    name.c_str());
                 ImGui::Indent();
                 render_directory_entries(entry.children);
                 ImGui::Unindent();
             } else {
-                ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "%s%s/", ICON_FA_FOLDER, name.c_str());
+                ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "%s%s/", ICON_MD_FOLDER, name.c_str());
             }
         } else {
             if (ImGui::Selectable(("##" + entry.path.string()).c_str(), false,
@@ -59,7 +59,7 @@ void Project::render_directory_entries(std::vector<DirectoryEntry>& entries) {
             ImGui::SameLine();
             const char* file_icon = m_file_extension_icons.count(entry.path.extension())
                                         ? m_file_extension_icons[entry.path.extension()]
-                                        : ICON_FA_FILE;
+                                        : ICON_MD_DESCRIPTION;
             ImGui::TextColored({0.8f, 0.8f, 0.8f, 0.8f}, "%s %s", file_icon, name.c_str());
         }
     }

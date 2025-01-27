@@ -10,8 +10,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "icons/IconsMaterialDesign.h"
 #include "rendering/animation.hpp"
-#include "rendering/frame.hpp"
 
 namespace piksy {
 namespace core {
@@ -22,11 +22,11 @@ enum class Tool {
     SCALE,         // Scale tool for resizing objects
     ERASE,         // Erase tool for removing parts of objects
     MEASURE,       // Measure tool for checking distances or dimensions
-    SNAP,          // Snap tool for aligning objects precisely
     PAN,           // Pan tool for moving the viewport
     COLOR_SWAP,    // Color swapping tool, swap a color of a texture for another
     BRUSH,         // Brush tool for painting or drawing
-    EXTRACT,       // Custom extraction tool
+    AUTO_EXTRACT,  // Automatically extract frames
+    EXTRACT,       // Extract frames from a selection rect
     VIEW,          // View tool for changing camera angles or perspective
     LASSO_SELECT,  // Lasso selection tool for freeform selections
     ZOOM_IN,       // Zoom in tool for changing viewport magnification
@@ -47,16 +47,16 @@ inline const char* tool_to_icon(Tool tool) {
             return ICON_FA_ERASER;
         case Tool::MEASURE:
             return ICON_FA_ANGLE_RIGHT;
-        case Tool::SNAP:
-            return ICON_FA_MAGNET;
+        case Tool::AUTO_EXTRACT:
+            return ICON_MD_AUTO_FIX_HIGH;
         case Tool::PAN:
-            return ICON_FA_PAPER_PLANE_O;
+            return ICON_MD_PAN_TOOL;
         case Tool::COLOR_SWAP:
-            return ICON_FA_TINT;
+            return ICON_MD_INVERT_COLORS_OFF;
         case Tool::BRUSH:
-            return ICON_FA_PAINT_BRUSH;
+            return ICON_MD_BRUSH;
         case Tool::EXTRACT:
-            return ICON_FA_SQUARE_O;
+            return ICON_MD_HIGHLIGHT_ALT;
         case Tool::VIEW:
             return ICON_FA_EYE;
         case Tool::LASSO_SELECT:
@@ -83,8 +83,8 @@ inline const char* tool_to_string(Tool tool) {
             return "ERASE";
         case Tool::MEASURE:
             return "MEASURE";
-        case Tool::SNAP:
-            return "SNAP";
+        case Tool::AUTO_EXTRACT:
+            return "AUTO EXTRACT";
         case Tool::PAN:
             return "PAN";
         case Tool::COLOR_SWAP:
