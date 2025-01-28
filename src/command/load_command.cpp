@@ -57,7 +57,7 @@ void LoadCommand::load(std::istream& load_file_stream) {
 
         // Load current tool
         if (j.contains("tool")) {
-            m_state.current_tool = j["tool"].get<core::Tool>();
+            m_state.current_tool = j["tool"].get<tools::Tool>();
         }
 
         // Load animations

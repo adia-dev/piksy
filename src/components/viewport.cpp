@@ -18,6 +18,7 @@
 
 #include "icons/IconsFontAwesome4.h"
 #include "rendering/frame.hpp"
+#include "tools/tool.hpp"
 
 namespace piksy {
 namespace components {
@@ -58,7 +59,7 @@ void Viewport::update() {
     update_pan();
 
     // Handle frame extraction commit when mouse is released
-    if (m_state.current_tool == core::Tool::EXTRACT && !m_state.mouse_state.is_pressed &&
+    if (m_state.current_tool == tools::Tool::EXTRACT && !m_state.mouse_state.is_pressed &&
         m_is_previewing) {
         // Mouse was released and we were previewing - commit the frames
         auto& animation = m_state.animation_state.get_current_animation();
@@ -101,10 +102,10 @@ void Viewport::update() {
 
     if (ImGui::IsKeyDown(ImGuiKey_Escape)) {
         switch (m_state.current_tool) {
-            case core::Tool::SELECT:
+            case tools::Tool::SELECT:
                 m_state.animation_state.selected_frames.clear();
                 break;
-            case core::Tool::EXTRACT: {
+            case tools::Tool::EXTRACT: {
                 auto& animation = m_state.animation_state.get_current_animation();
                 animation.frames.clear();
                 m_preview_frames.clear();
@@ -226,7 +227,7 @@ void Viewport::process_zoom() {
 
 void Viewport::process_panning() {
     if (m_state.mouse_state.is_pressed &&
-        (m_state.current_tool == core::Tool::PAN ||
+        (m_state.current_tool == tools::Tool::PAN ||
          (!m_state.mouse_state.is_dragging && ImGui::IsKeyDown(ImGuiKey_LeftShift)))) {
         ImVec2 delta = {(m_state.mouse_state.current_pos.x - m_state.mouse_state.start_pos.x) /
                             m_state.zoom_state.current_scale,
@@ -268,7 +269,7 @@ void Viewport::process_selection() {
         static_cast<int>(std::abs(x1 - x0)), static_cast<int>(std::abs(y1 - y0))};
 
     switch (m_state.current_tool) {
-        case core::Tool::EXTRACT: {
+        case tools::Tool::EXTRACT: {
             if (!m_state.texture_sprite.texture()) return;
 
             // Update preview while dragging
@@ -281,7 +282,7 @@ void Viewport::process_selection() {
             preview_command.execute();
         } break;
 
-        case core::Tool::SELECT: {
+        case tools::Tool::SELECT: {
             m_state.animation_state.selected_frames.clear();
 
             auto& animation = m_state.animation_state.get_current_animation();
@@ -467,10 +468,10 @@ void Viewport::handle_click(float x, float y) {
 
     if (texture_x >= 0 && texture_x < rect.w && texture_y >= 0 && texture_y < rect.h) {
         switch (m_state.current_tool) {
-            case core::Tool::SELECT:
+            case tools::Tool::SELECT:
                 sprite.set_selected(true);
                 break;
-            case core::Tool::COLOR_SWAP: {
+            case tools::Tool::COLOR_SWAP: {
                 SDL_Color pixel_color = get_texture_pixel_color(
                     static_cast<int>(texture_x), static_cast<int>(texture_y), sprite);
                 commands::SwapTextureCommand command(
@@ -537,10 +538,10 @@ void Viewport::render_toolbar() {
     ImGui::BeginGroup();
 
     // Render the toolbar buttons
-    int num_tools = static_cast<int>(core::Tool::COUNT);
+    int num_tools = static_cast<int>(tools::Tool::COUNT);
     for (int tool_idx = 0; tool_idx < num_tools; tool_idx++) {
-        core::Tool tool = static_cast<core::Tool>(tool_idx);
-        const char* icon = core::tool_to_icon(tool);
+        tools::Tool tool = static_cast<tools::Tool>(tool_idx);
+        const char* icon = tools::tool_to_icon(tool);
 
         if (tool_idx > 0) ImGui::SameLine();
 
