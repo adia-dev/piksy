@@ -10,8 +10,9 @@
 namespace piksy {
 namespace commands {
 
-SaveCommand::SaveCommand(core::State& state, fs::path save_path)
-    : m_state(state), m_save_path(std::move(save_path)) {}
+SaveCommand::SaveCommand(fs::path save_path, core::State& state,
+                         managers::AnimationManager& animation_manager)
+    : m_save_path(std::move(save_path)), m_state(state), m_animation_manager(animation_manager) {}
 
 void SaveCommand::execute() {
     try {
@@ -58,7 +59,7 @@ void SaveCommand::save(std::ostream& save_file_stream) {
     j["tool"] = m_state.current_tool;
 
     j["animations"] = nlohmann::json::array();
-    for (const auto& [name, animation] : m_state.animation_state.animations) {
+    for (const auto& [name, animation] : m_animation_manager.animations()) {
         nlohmann::json animation_json;
         animation_json["name"] = name;
 
@@ -76,7 +77,9 @@ void SaveCommand::save(std::ostream& save_file_stream) {
 
         j["animations"].push_back(animation_json);
     }
-    j["current_animation"] = m_state.animation_state.current_animation;
+    if (m_animation_manager.current_animation() != nullptr) {
+        j["current_animation"] = m_animation_manager.current_animation()->name;
+    }
 
     nlohmann::json texture_json({});
     if (m_state.texture_sprite.texture() != nullptr) {

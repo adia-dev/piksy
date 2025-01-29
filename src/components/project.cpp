@@ -77,9 +77,6 @@ bool Project::try_select_texture(const std::filesystem::path& file_path) {
 
         // TODO: Refactor this, this isn't right
         m_state.animation_state.selected_frames.clear();
-        m_state.animation_state.animations.clear();
-        m_state.animation_state.current_animation = "Untitled";
-        m_state.animation_state.animations["Untitled"];
         return true;
     } catch (const std::runtime_error& ex) {
         core::Logger::error("Failed to select a texture in the project: %s", ex.what());

@@ -16,8 +16,9 @@ namespace piksy {
 namespace layers {
 class EditorLayer : public Layer {
    public:
-    EditorLayer(rendering::Renderer& renderer, managers::ResourceManager& resource_manager,
-                core::State& state);
+    EditorLayer(rendering::Renderer& renderer, core::State& state,
+                managers::ResourceManager& resource_manager,
+                managers::AnimationManager& animation_manager);
 
     void on_attach() override;
     void on_detach() override;
@@ -28,6 +29,7 @@ class EditorLayer : public Layer {
    private:
     rendering::Renderer& m_renderer;
     managers::ResourceManager& m_resource_manager;
+    managers::AnimationManager& m_animation_manager;
 
     std::unique_ptr<components::Viewport> m_viewport;
     std::unique_ptr<components::Console> m_console;

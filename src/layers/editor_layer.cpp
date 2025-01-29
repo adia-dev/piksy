@@ -1,20 +1,27 @@
 #include <layers/editor_layer.hpp>
+#include <memory>
 
 #include "components/animation_player.hpp"
 #include "components/console.hpp"
 #include "core/logger.hpp"
+#include "managers/animation_manager.hpp"
 #include "managers/resource_manager.hpp"
 #include "rendering/renderer.hpp"
 
 namespace piksy {
 namespace layers {
 
-EditorLayer::EditorLayer(rendering::Renderer& renderer, managers::ResourceManager& resource_manager,
-                         core::State& state)
-    : Layer(state, "EditorLayer"), m_renderer(renderer), m_resource_manager(resource_manager) {}
+EditorLayer::EditorLayer(rendering::Renderer& renderer, core::State& state,
+                         managers::ResourceManager& resource_manager,
+                         managers::AnimationManager& animation_manager)
+    : Layer(state, "EditorLayer"),
+      m_renderer(renderer),
+      m_resource_manager(resource_manager),
+      m_animation_manager(animation_manager) {}
 
 void EditorLayer::on_attach() {
-    m_viewport = std::make_unique<components::Viewport>(m_state, m_renderer, m_resource_manager);
+    m_viewport = std::make_unique<components::Viewport>(m_state, m_renderer, m_resource_manager,
+                                                        m_animation_manager);
     m_console = std::make_unique<components::Console>(m_state);
     m_animation_player = std::make_unique<components::AnimationPlayer>(m_state);
     m_project = std::make_unique<components::Project>(m_state, m_resource_manager);

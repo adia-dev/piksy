@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "icons/IconsFontAwesome4.h"
+#include "managers/animation_manager.hpp"
 #include "rendering/frame.hpp"
 #include "tools/tool.hpp"
 
@@ -24,10 +25,12 @@ namespace piksy {
 namespace components {
 
 Viewport::Viewport(core::State& state, rendering::Renderer& renderer,
-                   managers::ResourceManager& resource_manager)
+                   managers::ResourceManager& resource_manager,
+                   managers::AnimationManager& animation_manager)
     : UIComponent(state),
       m_renderer(renderer),
       m_resource_manager(resource_manager),
+      m_animation_manager(animation_manager),
       m_render_texture(nullptr),
       m_viewport_size(800, 600) {
     create_render_texture(static_cast<int>(m_viewport_size.x), static_cast<int>(m_viewport_size.y));
@@ -58,11 +61,15 @@ void Viewport::update() {
     update_zoom();
     update_pan();
 
+    auto animation = m_animation_manager.current_animation();
+    if (animation == nullptr) {
+        return;
+    }
+
     // Handle frame extraction commit when mouse is released
     if (m_state.current_tool == tools::Tool::EXTRACT && !m_state.mouse_state.is_pressed &&
         m_is_previewing) {
         // Mouse was released and we were previewing - commit the frames
-        auto& animation = m_state.animation_state.get_current_animation();
 
         // Check if we should append (shift key) or replace frames
         bool should_append = ImGui::IsKeyDown(ImGuiKey_LeftShift);
@@ -70,10 +77,10 @@ void Viewport::update() {
         // Commit the preview frames
         if (!m_preview_frames.empty()) {
             if (!should_append) {
-                animation.frames.clear();
+                animation->frames.clear();
             }
-            animation.frames.insert(animation.frames.end(), m_preview_frames.begin(),
-                                    m_preview_frames.end());
+            animation->frames.insert(animation->frames.end(), m_preview_frames.begin(),
+                                     m_preview_frames.end());
 
             core::Logger::debug("Committed %zu frames to animation", m_preview_frames.size());
         }
@@ -90,10 +97,9 @@ void Viewport::update() {
     // Rest of the update code...
     if (ImGui::IsKeyDown(ImGuiKey_Backspace)) {
         if (!m_state.animation_state.selected_frames.empty()) {
-            auto& animation = m_state.animation_state.get_current_animation();
             for (size_t i : m_state.animation_state.selected_frames) {
-                if (i < animation.frames.size()) {
-                    animation.frames.erase(animation.frames.begin() + i);
+                if (i < animation->frames.size()) {
+                    animation->frames.erase(animation->frames.begin() + i);
                 }
             }
             m_state.animation_state.selected_frames.clear();
@@ -106,8 +112,11 @@ void Viewport::update() {
                 m_state.animation_state.selected_frames.clear();
                 break;
             case tools::Tool::EXTRACT: {
-                auto& animation = m_state.animation_state.get_current_animation();
-                animation.frames.clear();
+                auto animation = m_animation_manager.current_animation();
+                if (animation == nullptr) {
+                    break;
+                }
+                animation->frames.clear();
                 m_preview_frames.clear();
                 m_is_previewing = false;
                 m_state.animation_state.current_frame = 0;
@@ -165,18 +174,7 @@ void Viewport::render() {
 }
 
 void Viewport::notify_dropped_file(const std::string& dropped_file_path) {
-    core::Logger::debug("Dropped file into the Viewport: %s", dropped_file_path.c_str());
-    try {
-        m_state.texture_sprite.set_texture(m_resource_manager.get_texture(dropped_file_path));
-
-        // TODO: Refactor this, this isn't right
-        m_state.animation_state.selected_frames.clear();
-        m_state.animation_state.animations.clear();
-        m_state.animation_state.current_animation = "Untitled";
-        m_state.animation_state.animations["Untitled"];
-    } catch (const std::runtime_error& ex) {
-        core::Logger::error("Failed to select a texture in the project: %s", ex.what());
-    }
+    core::Logger::debug("NotImplemented (file: %s)", dropped_file_path.c_str());
 }
 
 void Viewport::process_mouse_input() {
@@ -285,9 +283,13 @@ void Viewport::process_selection() {
         case tools::Tool::SELECT: {
             m_state.animation_state.selected_frames.clear();
 
-            auto& animation = m_state.animation_state.get_current_animation();
-            for (size_t i = 0; i < animation.frames.size(); ++i) {
-                const rendering::Frame& frame = animation.frames[i];
+            auto* animation = m_animation_manager.current_animation();
+            if (animation == nullptr) {
+                break;
+            }
+
+            for (size_t i = 0; i < animation->frames.size(); ++i) {
+                const rendering::Frame& frame = animation->frames[i];
                 const SDL_Rect frame_rect{frame.x, frame.y, frame.w, frame.h};
                 if (SDL_HasIntersection(&frame_rect, &selection_world_rect)) {
                     m_state.animation_state.selected_frames.insert(i);
@@ -408,6 +410,11 @@ void Viewport::render_grid_background() {
 }
 
 void Viewport::render_frames() const {
+    auto animation = m_animation_manager.current_animation();
+    if (animation == nullptr) {
+        return;
+    }
+
     // Pre-compute colors to reduce redundant operations inside the loop
     static const SDL_Color current_frame_color{206, 2, 65, 155};
     static const SDL_Color selected_frame_color{255, 135, 177, 155};
@@ -419,9 +426,8 @@ void Viewport::render_frames() const {
     const ImVec2 offset = m_state.pan_state.current_offset;
 
     // Render loop with reduced computation
-    auto& animation = m_state.animation_state.get_current_animation();
-    for (size_t i = 0; i < animation.frames.size(); ++i) {
-        const rendering::Frame& frame = animation.frames[i];
+    for (size_t i = 0; i < animation->frames.size(); ++i) {
+        const rendering::Frame& frame = animation->frames[i];
         SDL_Rect render_frame_rect{static_cast<int>((frame.x + offset.x) * scale),
                                    static_cast<int>((frame.y + offset.y) * scale),
                                    static_cast<int>(frame.w * scale),

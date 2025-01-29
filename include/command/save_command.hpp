@@ -5,13 +5,16 @@
 #include <filesystem>
 #include <ostream>
 
+#include "managers/animation_manager.hpp"
+
 namespace fs = std::filesystem;
 
 namespace piksy {
 namespace commands {
 class SaveCommand : public Command {
    public:
-    SaveCommand(core::State& state, fs::path save_path);
+    SaveCommand(fs::path save_path, core::State& state,
+                managers::AnimationManager& animation_manager);
 
     virtual void execute() override;
 
@@ -19,8 +22,9 @@ class SaveCommand : public Command {
     void save(std::ostream& save_file_stream);
 
    private:
-    core::State& m_state;
     fs::path m_save_path;
+    core::State& m_state;
+    managers::AnimationManager& m_animation_manager;
 };
 }  // namespace commands
 }  // namespace piksy

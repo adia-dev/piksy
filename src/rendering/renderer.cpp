@@ -9,7 +9,7 @@ Renderer::~Renderer() { cleanup(); }
 
 void Renderer::init(Window& window, core::WindowConfig& config) {
     m_renderer.reset(SDL_CreateRenderer(window.get(), -1, config.renderer_flags),
-                    SDL_DestroyRenderer);
+                     SDL_DestroyRenderer);
 
     if (m_renderer == nullptr) {
         SDL_Log("Error creating SDL_Renderer!");

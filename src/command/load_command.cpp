@@ -7,13 +7,18 @@
 
 #include "core/logger.hpp"
 #include "core/state.hpp"
+#include "managers/animation_manager.hpp"
 
 namespace piksy {
 namespace commands {
 
-LoadCommand::LoadCommand(core::State& m_state, managers::ResourceManager& resource_manager,
-                         const fs::path& load_path)
-    : m_state(m_state), m_resource_manager(resource_manager), m_load_path(load_path) {}
+LoadCommand::LoadCommand(const fs::path& load_path, core::State& m_state,
+                         managers::ResourceManager& resource_manager,
+                         managers::AnimationManager& animation_manager)
+    : m_load_path(load_path),
+      m_state(m_state),
+      m_resource_manager(resource_manager),
+      m_animation_manager(animation_manager) {}
 
 void LoadCommand::execute() {
     try {
@@ -62,10 +67,10 @@ void LoadCommand::load(std::istream& load_file_stream) {
 
         // Load animations
         if (j.contains("animations")) {
-            m_state.animation_state.animations.clear();
+            m_animation_manager.clear();
             for (const auto& anim_json : j["animations"]) {
                 std::string name = anim_json["name"];
-                rendering::Animation animation;
+                rendering::Animation animation(name);
 
                 for (const auto& frame_json : anim_json["frames"]) {
                     rendering::Frame frame{
@@ -84,12 +89,12 @@ void LoadCommand::load(std::istream& load_file_stream) {
                     animation.frames.push_back(frame);
                 }
 
-                m_state.animation_state.animations[name] = std::move(animation);
+                m_animation_manager.add_animation(name, std::move(animation));
             }
         }
 
         if (j.contains("current_animation")) {
-            m_state.animation_state.current_animation = j["current_animation"];
+            m_animation_manager.set_current_animation(j["current_animation"]);
         }
 
         // Load texture sprite

@@ -26,7 +26,7 @@ class Texture2D {
    private:
     // TODO: Write custom deleter with debug logs on delete
     std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> m_texture{nullptr,
-                                                                         SDL_DestroyTexture};
+                                                                          SDL_DestroyTexture};
 
     int m_width, m_height, m_pitch;
 

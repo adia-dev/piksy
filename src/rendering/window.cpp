@@ -9,8 +9,8 @@ Window::~Window() { cleanup(); }
 
 void Window::init(const core::WindowConfig& config) {
     m_window.reset(SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
-                                   SDL_WINDOWPOS_CENTERED, config.width, config.height,
-                                   config.flags));
+                                    SDL_WINDOWPOS_CENTERED, config.width, config.height,
+                                    config.flags));
     if (m_window == nullptr) {
         core::Logger::fatal("Failed to create a Window: %s", SDL_GetError());
     }

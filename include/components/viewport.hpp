@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "imgui_internal.h"
+#include "managers/animation_manager.hpp"
 
 namespace piksy {
 namespace components {
@@ -18,7 +19,8 @@ namespace components {
 class Viewport : public UIComponent {
    public:
     explicit Viewport(core::State& state, rendering::Renderer& renderer,
-                      managers::ResourceManager& resource_manager);
+                      managers::ResourceManager& resource_manager,
+                      managers::AnimationManager& animation_manager);
     ~Viewport();
 
     void update() override;
@@ -54,6 +56,8 @@ class Viewport : public UIComponent {
    private:
     rendering::Renderer& m_renderer;
     managers::ResourceManager& m_resource_manager;
+    managers::AnimationManager& m_animation_manager;
+
     SDL_Texture* m_render_texture = nullptr;
     std::vector<rendering::Frame> m_preview_frames;
     bool m_is_previewing = false;

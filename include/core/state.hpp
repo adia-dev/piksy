@@ -43,16 +43,7 @@ struct AnimationState {
     float frame_duration = 1.0f / fps;
     float timer = 0.0f;
 
-    std::unordered_map<std::string, rendering::Animation> animations;
-    std::string current_animation;
-
     std::unordered_set<size_t> selected_frames;
-
-    rendering::Animation& get_animation(const std::string& animation_name) {
-        return animations[animation_name];
-    }
-
-    rendering::Animation& get_current_animation() { return animations[current_animation]; }
 };
 
 struct ViewportState {

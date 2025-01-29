@@ -58,7 +58,7 @@ void Texture2D::load(SDL_Renderer* renderer) {
     m_height = surface->h;
 
     m_texture.reset(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-                                     SDL_TEXTUREACCESS_STREAMING, m_width, m_height));
+                                      SDL_TEXTUREACCESS_STREAMING, m_width, m_height));
     SDL_SetTextureBlendMode(m_texture.get(), SDL_BLENDMODE_BLEND);
     if (m_texture == nullptr) {
         core::Logger::error("Failed to create a texture from a surface: %s", SDL_GetError());

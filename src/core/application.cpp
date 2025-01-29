@@ -5,7 +5,6 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui_internal.h>
 
-#include <command/export_animation_command.hpp>
 #include <command/export_texture_command.hpp>
 #include <command/load_command.hpp>
 #include <command/save_command.hpp>
@@ -64,7 +63,8 @@ void Application::init() {
     init_fonts();
     init_state();
 
-    m_layer_stack.push_layer<layers::EditorLayer>(m_renderer, m_resource_manager, m_state);
+    m_layer_stack.push_layer<layers::EditorLayer>(m_renderer, m_state, m_resource_manager,
+                                                  m_animation_manager);
 
     Logger::info("Successfully initialized the application !");
 }
@@ -79,18 +79,10 @@ void Application::init_fonts() {
 
 void Application::init_state() {
     {
-        // NOTE: DON'T COMMIT
-        // UPDATE: ...
-        commands::LoadCommand command(m_state, m_resource_manager, m_config.app_config.save_file);
+        // TODO: The load on startup should be configurable
+        commands::LoadCommand command(m_config.app_config.save_file, m_state, m_resource_manager,
+                                      m_animation_manager);
         command.execute();
-    }
-
-    if (m_state.animation_state.animations.empty()) {
-        m_state.animation_state.current_animation = "Untitled";
-        m_state.animation_state.animations["Untitled"];
-    } else if (m_state.animation_state.current_animation.empty()) {
-        m_state.animation_state.current_animation =
-            m_state.animation_state.animations.begin()->first;
     }
 }
 
@@ -110,7 +102,8 @@ void Application::handle_events() {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT) {
             // TODO: Configure this `Save on Exit`
-            commands::SaveCommand command(m_state, m_config.app_config.save_file);
+            commands::SaveCommand command(m_config.app_config.save_file, m_state,
+                                          m_animation_manager);
             command.execute();
 
             m_is_running = false;
@@ -119,7 +112,8 @@ void Application::handle_events() {
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE &&
             event.window.windowID == SDL_GetWindowID(m_window.get())) {
             // TODO: Configure this `Save on Exit`
-            commands::SaveCommand command(m_state, m_config.app_config.save_file);
+            commands::SaveCommand command(m_config.app_config.save_file, m_state,
+                                          m_animation_manager);
             command.execute();
 
             m_is_running = false;
@@ -201,23 +195,14 @@ void Application::render() {
             if (ImGui::BeginMenuBar()) {
                 if (ImGui::BeginMenu("File")) {
                     if (ImGui::MenuItem("Open...", "Ctrl+O")) {
-                        commands::LoadCommand command(m_state, m_resource_manager,
-                                                      m_config.app_config.save_file);
+                        commands::LoadCommand command(m_config.app_config.save_file, m_state,
+                                                      m_resource_manager, m_animation_manager);
                         command.execute();
                     }
                     if (ImGui::MenuItem("Save", "Cmd+S")) {
-                        commands::SaveCommand command(m_state, m_config.app_config.save_file);
+                        commands::SaveCommand command(m_config.app_config.save_file, m_state,
+                                                      m_animation_manager);
                         command.execute();
-                    }
-
-                    if (ImGui::MenuItem("Export Animations...", nullptr)) {
-                        // Hard-code or ask user for path
-                        // e.g. auto export_path = "./animations_export.json";
-                        // or open an "ImGuiFileDialog" or something
-                        std::string export_path = "./export_animations.json";
-
-                        commands::ExportAnimationsCommand export_cmd(m_state, export_path);
-                        export_cmd.execute();
                     }
 
                     if (ImGui::MenuItem("Export Texture as PNG...")) {

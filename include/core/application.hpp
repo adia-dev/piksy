@@ -9,6 +9,7 @@
 #include <rendering/window.hpp>
 
 #include "layers/layer_stack.hpp"
+#include "managers/animation_manager.hpp"
 
 namespace piksy {
 namespace core {
@@ -56,6 +57,7 @@ class Application {
     rendering::Window m_window;
     rendering::Renderer m_renderer;
     managers::ResourceManager m_resource_manager;
+    managers::AnimationManager m_animation_manager;
 
     ImGuiIO *m_io = nullptr;
 
